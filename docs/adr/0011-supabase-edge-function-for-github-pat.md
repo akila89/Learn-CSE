@@ -1,0 +1,3 @@
+# Supabase Edge Function as proxy for GitHub Actions workflow_dispatch
+
+The Scraper Control screen triggers GitHub Actions via a Supabase Edge Function rather than calling the GitHub API directly from the Angular app. The GitHub Personal Access Token (PAT) required to trigger `workflow_dispatch` must never reach the browser — it would be visible in the Angular bundle and network requests. The Edge Function holds the PAT as a server-side secret, validates the caller's Supabase session, and proxies the request to the GitHub API. Angular calls the Edge Function endpoint (authenticated via the Supabase anon key + session), passing stock symbols for targeted retries. Supabase Edge Functions run on Deno and are included in the free tier (500K invocations/month).

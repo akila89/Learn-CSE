@@ -1,0 +1,3 @@
+# Angular Signals for state management over NgRx
+
+State management uses Angular Signals in feature services rather than NgRx. Each feature service (e.g. `WatchlistService`, `StockService`) holds signals and calls Supabase directly; components inject services and read signals in templates. NgRx was rejected because: the app is predominantly read-only data fetched on navigation; the single-user scope means no complex shared mutation flows; and NgRx's actions/reducers/selectors boilerplate adds significant overhead for no architectural benefit at this scale. Signals are Angular's native reactivity primitive as of v17 and pair naturally with standalone components.
