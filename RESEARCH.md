@@ -47,7 +47,12 @@ Build a personal web application that:
 
 CSE exposes an unofficial API. No official documentation — endpoints may change without notice. **Verified working 2026-05-28 via Playwright reverse engineering.**
 
-**Critical finding:** Endpoints that return 400 with `application/json` work correctly with `application/x-www-form-urlencoded`. No authentication required.
+**Critical findings (all verified 2026-05-28):**
+- Endpoints return 400 with `application/json` — must use `application/x-www-form-urlencoded`
+- **No authentication required** — no login, no session cookie
+- **No Referer header required** — plain HTTP client works
+- **No x-api-key required** — key exists in JS bundle (`btoa("Cse123Api")` = `Q3NlMTIzQXBp`) but is only needed for user account endpoints (login, OTP, subscriptions)
+- Simplest working scraper: plain `HttpClient` POST with form-encoded body, no special headers
 
 **Base URL:** `https://www.cse.lk/api/`
 
