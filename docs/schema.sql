@@ -66,8 +66,10 @@ CREATE TABLE daily_indicators (
   bb_upper     NUMERIC,
   bb_mid       NUMERIC,
   bb_lower     NUMERIC,
-  week52_high  NUMERIC,
-  week52_low   NUMERIC,
+  week52_high      NUMERIC,
+  week52_low       NUMERIC,
+  p_e_ratio        NUMERIC,  -- close / EPS; requires stock_fundamentals to be populated
+  dividend_yield   NUMERIC,  -- DPS / close; requires stock_fundamentals to be populated
   -- new indicators added here via ALTER TABLE ADD COLUMN
   UNIQUE (stock_id, date)
 );
@@ -83,11 +85,14 @@ CREATE TABLE reports (
   pdf_path         TEXT NOT NULL,   -- Supabase Storage path
   cse_pdf_url      TEXT,            -- original CSE CDN URL
   raw_extraction   JSONB,           -- Gemini's original output; never modified
-  extraction       JSONB,           -- working copy; auto-populated from raw; user-editable
+  extraction       JSONB,           -- working copy; auto-populated from raw; user-editable; includes field footnotes
   corrected_at     TIMESTAMPTZ,     -- set when user edits extraction; null if never touched
-  ingested_at      TIMESTAMPTZ DEFAULT now(),
-  UNIQUE (stock_id, period)
+  is_latest        BOOLEAN NOT NULL DEFAULT true,  -- false when superseded by a corrected re-filing
+  ingested_at      TIMESTAMPTZ DEFAULT now()
 );
+
+-- Only one latest report per stock per period; re-filings set old row is_latest=false
+CREATE UNIQUE INDEX reports_stock_period_latest ON reports(stock_id, period) WHERE is_latest = true;
 
 -- ─── Fundamentals ─────────────────────────────────────────────────────────────
 
@@ -134,14 +139,15 @@ CREATE TABLE stock_fundamentals (
 
 -- ─── Annotations ──────────────────────────────────────────────────────────────
 
+-- Report footnotes (Gemini-extracted) live inside reports.extraction JSONB per field.
+-- This table stores only user-written notes — user_id is always non-null.
 CREATE TABLE field_annotations (
-  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  report_id        UUID NOT NULL REFERENCES reports(id),
-  field_name       TEXT NOT NULL,   -- e.g. 'eps', 'revenue', 'net_profit'
-  report_footnote  TEXT,            -- extracted by Gemini from PDF footnotes/annexes
-  user_id          UUID REFERENCES auth.users(id),
-  user_note        TEXT,            -- written by user; null if no user annotation
-  created_at       TIMESTAMPTZ DEFAULT now(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  report_id   UUID NOT NULL REFERENCES reports(id),
+  field_name  TEXT NOT NULL,        -- e.g. 'eps', 'revenue', 'net_profit'
+  user_id     UUID NOT NULL REFERENCES auth.users(id),
+  user_note   TEXT NOT NULL,
+  created_at  TIMESTAMPTZ DEFAULT now(),
   UNIQUE (report_id, field_name, user_id)  -- one note per user per field per report; edit in place
 );
 
@@ -180,5 +186,5 @@ CREATE TABLE scraper_runs (
   stocks_succeeded      INTEGER,
   stocks_failed         INTEGER,
   no_trading_detected   BOOLEAN DEFAULT false,  -- true = possible holiday, suppresses Stale badge
-  error_detail          JSONB   -- array of { stock_id, error_message } for per-stock failures
+  error_detail          JSONB   -- array of { stock_id, symbol, phase, error_message } per failure
 );
