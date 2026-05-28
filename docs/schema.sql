@@ -1,0 +1,169 @@
+-- CSE Stock Analyser — Reference Schema
+-- All tables require RLS policies: SELECT/INSERT/UPDATE where auth.uid() matches the app user.
+
+-- ─── Core entities ────────────────────────────────────────────────────────────
+
+CREATE TABLE companies (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name         TEXT NOT NULL UNIQUE,
+  profile      JSONB,  -- Company Profile: sector, business description, revenue characteristics
+  insights     JSONB,  -- Auto-generated Insights from Gemini, refreshed on each report ingestion
+  created_at   TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE stocks (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id        UUID NOT NULL REFERENCES companies(id),
+  symbol            TEXT NOT NULL UNIQUE,  -- e.g. JKH.N0000
+  cse_chart_id      INTEGER NOT NULL,      -- from allSecurityCode; used for price/chart API calls
+  cse_security_id   INTEGER NOT NULL,      -- from companyInfoSummery; used for report/news API calls
+  created_at        TIMESTAMPTZ DEFAULT now()
+);
+
+-- ─── Watchlist ────────────────────────────────────────────────────────────────
+
+CREATE TABLE watchlist_entries (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES auth.users(id),
+  stock_id    UUID NOT NULL REFERENCES stocks(id),
+  is_active   BOOLEAN NOT NULL DEFAULT true,
+  stock_note  TEXT,         -- freeform per-user per-stock observation (Stock Note)
+  added_at    TIMESTAMPTZ DEFAULT now(),
+  removed_at  TIMESTAMPTZ,
+  UNIQUE (user_id, stock_id)
+);
+
+-- Scraper query: SELECT DISTINCT stock_id FROM watchlist_entries WHERE is_active = true
+
+-- ─── Price data ───────────────────────────────────────────────────────────────
+
+CREATE TABLE daily_prices (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stock_id    UUID NOT NULL REFERENCES stocks(id),
+  date        DATE NOT NULL,
+  open        NUMERIC,
+  high        NUMERIC,
+  low         NUMERIC,
+  close       NUMERIC,
+  volume      BIGINT,
+  change      NUMERIC,
+  change_pct  NUMERIC,
+  UNIQUE (stock_id, date)
+);
+
+-- ─── Technical indicators (denormalised — ADR 0004) ───────────────────────────
+
+CREATE TABLE daily_indicators (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stock_id     UUID NOT NULL REFERENCES stocks(id),
+  date         DATE NOT NULL,
+  rsi          NUMERIC,
+  macd_line    NUMERIC,
+  macd_signal  NUMERIC,
+  sma_50       NUMERIC,
+  sma_200      NUMERIC,
+  bb_upper     NUMERIC,
+  bb_mid       NUMERIC,
+  bb_lower     NUMERIC,
+  week52_high  NUMERIC,
+  week52_low   NUMERIC,
+  -- new indicators added here via ALTER TABLE ADD COLUMN
+  UNIQUE (stock_id, date)
+);
+
+-- ─── Reports and extraction ───────────────────────────────────────────────────
+
+CREATE TABLE reports (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stock_id         UUID NOT NULL REFERENCES stocks(id),
+  report_type      TEXT NOT NULL CHECK (report_type IN ('annual', 'quarterly')),
+  period           TEXT NOT NULL,   -- e.g. 'FY2024/25', 'Q3 FY2024/25'
+  audit_status     TEXT NOT NULL CHECK (audit_status IN ('audited', 'unaudited')),
+  pdf_path         TEXT NOT NULL,   -- Supabase Storage path
+  cse_pdf_url      TEXT,            -- original CSE CDN URL
+  raw_extraction   JSONB,           -- Gemini's original output; never modified
+  extraction       JSONB,           -- working copy; auto-populated from raw; user-editable
+  corrected_at     TIMESTAMPTZ,     -- set when user edits extraction; null if never touched
+  ingested_at      TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (stock_id, period)
+);
+
+-- ─── Fundamentals ─────────────────────────────────────────────────────────────
+
+-- Company-level figures (ADR 0001 — shared across share classes, keyed by period)
+CREATE TABLE company_fundamentals (
+  id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  company_id              UUID NOT NULL REFERENCES companies(id),
+  report_id               UUID NOT NULL REFERENCES reports(id),
+  period                  TEXT NOT NULL,
+  audit_status            TEXT NOT NULL,
+  revenue                 NUMERIC,
+  revenue_prior           NUMERIC,
+  revenue_change_pct      NUMERIC,
+  net_profit              NUMERIC,
+  net_profit_prior        NUMERIC,
+  net_profit_change_pct   NUMERIC,
+  roe                     NUMERIC,
+  roe_prior               NUMERIC,
+  debt_equity             NUMERIC,
+  debt_equity_prior       NUMERIC,
+  nav                     NUMERIC,
+  nav_prior               NUMERIC,
+  extras                  JSONB,  -- additional_items from Extraction Schema outside fixed fields
+  UNIQUE (company_id, period)
+);
+
+-- Stock-level figures (EPS, DPS differ between .N and .X share classes)
+CREATE TABLE stock_fundamentals (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stock_id         UUID NOT NULL REFERENCES stocks(id),
+  report_id        UUID NOT NULL REFERENCES reports(id),
+  period           TEXT NOT NULL,
+  audit_status     TEXT NOT NULL,
+  eps              NUMERIC,
+  eps_prior        NUMERIC,
+  eps_change_pct   NUMERIC,
+  dps              NUMERIC,
+  dps_prior        NUMERIC,
+  extras           JSONB,
+  UNIQUE (stock_id, period)
+);
+
+-- ─── Annotations ──────────────────────────────────────────────────────────────
+
+CREATE TABLE field_annotations (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  report_id        UUID NOT NULL REFERENCES reports(id),
+  field_name       TEXT NOT NULL,   -- e.g. 'eps', 'revenue', 'net_profit'
+  report_footnote  TEXT,            -- extracted by Gemini from PDF footnotes/annexes
+  user_id          UUID REFERENCES auth.users(id),
+  user_note        TEXT,            -- written by user; null if no user annotation
+  created_at       TIMESTAMPTZ DEFAULT now()
+);
+
+-- ─── Recommendations ──────────────────────────────────────────────────────────
+
+CREATE TABLE recommendations (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stock_id        UUID NOT NULL REFERENCES stocks(id),
+  generated_at    TIMESTAMPTZ DEFAULT now(),
+  signal          TEXT NOT NULL CHECK (signal IN ('BUY', 'ACCUMULATE', 'HOLD', 'REDUCE', 'SELL')),
+  confidence_pct  INTEGER,
+  reasoning       TEXT,
+  risks           TEXT,
+  prompt_sent     TEXT,   -- full Gemini prompt; stored for auditing and prompt iteration
+  raw_response    TEXT    -- full Gemini response
+);
+
+-- ─── Scraper ──────────────────────────────────────────────────────────────────
+
+CREATE TABLE scraper_runs (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  run_at                TIMESTAMPTZ DEFAULT now(),
+  status                TEXT NOT NULL CHECK (status IN ('success', 'partial', 'failed')),
+  stocks_attempted      INTEGER,
+  stocks_succeeded      INTEGER,
+  stocks_failed         INTEGER,
+  no_trading_detected   BOOLEAN DEFAULT false,  -- true = possible holiday, suppresses Stale badge
+  error_detail          JSONB   -- array of { stock_id, error_message } for per-stock failures
+);
