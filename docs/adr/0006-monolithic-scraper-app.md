@@ -1,0 +1,3 @@
+# Single monolithic .NET scraper app
+
+All scraper phases — price fetching, holiday detection, indicator computation, report detection, report ingestion, and recommendation generation — run as sequential phases inside one .NET console app, triggered by one GitHub Actions workflow. A split-phase approach (separate apps or workflows per concern) was rejected because: report detection and price scraping share the same nightly cadence so there is no scheduling benefit to separating them; cross-workflow dependencies add coordination complexity; and each GitHub Actions job has a startup cost that compounds with more jobs. Internally, phases are clearly separated as distinct classes and are independently testable.

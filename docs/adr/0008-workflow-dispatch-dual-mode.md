@@ -1,0 +1,3 @@
+# workflow_dispatch dual-mode: scheduled run and targeted retry
+
+The GitHub Actions scraper workflow serves two modes via a single `workflow_dispatch` input parameter `stock_symbols` (comma-separated symbols, optional). When empty — as in the nightly cron trigger — the scraper processes all Active Stocks. When populated — triggered manually from the Scraper Control screen — it processes only the specified symbols. This allows the UI to surface last night's failed stocks and offer a one-click targeted retry without a separate retry workflow, a retry queue, or duplicated workflow definitions. The Scraper Control screen passes the failed stock symbols directly to the GitHub Actions API when triggering the dispatch.

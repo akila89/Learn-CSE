@@ -1,0 +1,3 @@
+# Direct PostgreSQL connection from scraper via Npgsql
+
+The scraper connects to Supabase using a direct PostgreSQL connection (Npgsql) rather than the Supabase PostgREST API. The scraper is a trusted backend process running with the service key in GitHub Actions Secrets — the REST abstraction exists to protect the frontend, not the backend. Direct connection enables SQL transactions (prices and indicators written atomically per stock), efficient bulk upserts for OHLCV data, and no per-row HTTP overhead. The connection string is stored as a GitHub Actions Secret and never appears in source code.
