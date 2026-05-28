@@ -1,0 +1,3 @@
+# GitHub Actions API for live scraper run status
+
+The Scraper Control screen checks live run status by calling the GitHub Actions API (via the existing `trigger-scraper` Edge Function) rather than reading from `scraper_runs`. The scraper only writes to `scraper_runs` when a run completes — there is no in-progress row during execution. Writing a "started" row at scraper startup was rejected because a crashed run would leave a permanent in-progress row with no completion record, requiring cleanup logic. Instead, the Scraper Control screen queries the GitHub Actions workflow runs API to get real-time status (queued / in_progress / completed) for the most recent run, supplemented by the `scraper_runs` table for detailed per-stock results once complete.

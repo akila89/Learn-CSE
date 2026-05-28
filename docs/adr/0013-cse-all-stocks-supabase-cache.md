@@ -1,0 +1,3 @@
+# CSE stock list cached in Supabase to avoid browser CORS
+
+The Stock Manager search reads from a `cse_all_stocks` table in Supabase rather than calling the CSE `allSecurityCode` API directly from the browser. The CSE API was verified working from server-side contexts (.NET, Playwright) but does not serve CORS headers — browser requests would be blocked. The scraper refreshes `cse_all_stocks` weekly (on any run where `MAX(refreshed_at)` is older than 7 days) by upserting the full `allSecurityCode` response. The Angular app queries Supabase for search — no CORS issue, no additional Edge Function required. The table carries no RLS restriction since it is read-only public reference data containing no user information.

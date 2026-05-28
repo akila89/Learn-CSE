@@ -159,6 +159,17 @@ CREATE TABLE recommendations (
   raw_response    TEXT    -- full Gemini response
 );
 
+-- ─── CSE stock list cache ─────────────────────────────────────────────────────
+
+-- Read-only reference data — no RLS required, safe for anon key reads.
+-- Refreshed weekly by the scraper (ADR 0013). Used by Stock Manager search.
+CREATE TABLE cse_all_stocks (
+  symbol        TEXT PRIMARY KEY,   -- e.g. JKH.N0000
+  name          TEXT NOT NULL,
+  cse_chart_id  INTEGER NOT NULL,
+  refreshed_at  TIMESTAMPTZ DEFAULT now()
+);
+
 -- ─── Scraper ──────────────────────────────────────────────────────────────────
 
 CREATE TABLE scraper_runs (

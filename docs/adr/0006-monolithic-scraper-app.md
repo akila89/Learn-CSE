@@ -4,14 +4,15 @@ All scraper phases — price fetching, holiday detection, indicator computation,
 
 ## Phase order
 
-1. Load Active Stocks from Supabase
-2. Scrape prices → `daily_prices`
-3. Detect market holiday (compare latest returned price date vs stored)
-4. If no new price data → skip indicators and recommendations; **still run report detection**
-5. Compute Technical Indicators → `daily_indicators`
-6. Detect and ingest new Reports → fundamentals tables
-7. Generate Recommendations → `recommendations`
-8. Write `scraper_runs` log row
+1. Refresh `cse_all_stocks` cache if older than 7 days (weekly, via `allSecurityCode` upsert)
+2. Load Active Stocks from Supabase
+3. Scrape prices → `daily_prices`
+4. Detect market holiday (compare latest returned price date vs stored)
+5. If no new price data → skip indicators and recommendations; **still run report detection**
+6. Compute Technical Indicators → `daily_indicators`
+7. Detect and ingest new Reports → fundamentals tables
+8. Generate Recommendations → `recommendations`
+9. Write `scraper_runs` log row
 
 Report detection (step 6) is never skipped — a company can publish a quarterly report on a public holiday. Only indicator computation and recommendation generation are skipped when no new price data is detected.
 
