@@ -16,8 +16,9 @@ CREATE TABLE stocks (
   company_id        UUID NOT NULL REFERENCES companies(id),
   symbol            TEXT NOT NULL UNIQUE,  -- e.g. JKH.N0000
   cse_chart_id      INTEGER NOT NULL,      -- from allSecurityCode; used for price/chart API calls
-  cse_security_id   INTEGER NOT NULL,      -- from companyInfoSummery; used for report/news API calls
-  created_at        TIMESTAMPTZ DEFAULT now()
+  cse_security_id      INTEGER NOT NULL,      -- from companyInfoSummery; used for report/news API calls
+  last_price_scraped_at TIMESTAMPTZ,          -- updated by scraper each run; used for Stale detection
+  created_at           TIMESTAMPTZ DEFAULT now()
 );
 
 -- ─── Watchlist ────────────────────────────────────────────────────────────────
@@ -109,7 +110,9 @@ CREATE TABLE company_fundamentals (
   debt_equity_prior       NUMERIC,
   nav                     NUMERIC,
   nav_prior               NUMERIC,
-  extras                  JSONB,  -- additional_items from Extraction Schema outside fixed fields
+  extras                  JSONB,    -- additional_items from Extraction Schema outside fixed fields
+  has_conflict            BOOLEAN DEFAULT false,  -- true when .N and .X reports disagree on figures
+  conflict_detail         JSONB,    -- { field, n_value, x_value } for each conflicting figure
   UNIQUE (company_id, period)
 );
 
@@ -138,7 +141,8 @@ CREATE TABLE field_annotations (
   report_footnote  TEXT,            -- extracted by Gemini from PDF footnotes/annexes
   user_id          UUID REFERENCES auth.users(id),
   user_note        TEXT,            -- written by user; null if no user annotation
-  created_at       TIMESTAMPTZ DEFAULT now()
+  created_at       TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (report_id, field_name, user_id)  -- one note per user per field per report; edit in place
 );
 
 -- ─── Recommendations ──────────────────────────────────────────────────────────
