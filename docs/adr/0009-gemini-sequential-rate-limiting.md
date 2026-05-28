@@ -1,0 +1,3 @@
+# Gemini calls run sequentially with a fixed delay
+
+All Gemini API calls (report extraction and recommendation generation) run sequentially in the scraper — not in parallel — with a 4-second delay between calls. The Gemini Flash free tier allows 15 requests per minute. With up to 30 Active Stocks plus N report extractions per nightly run, concurrent Gemini calls risk hitting this limit and causing partial failures that are hard to retry cleanly. Sequential calls with a 4-second gap guarantee a maximum of 15 calls per minute regardless of watchlist size, keep the run well within the free tier, and make failures straightforward to log per stock. At 30 stocks this adds approximately 2 minutes to the run — acceptable given the 3 AM SLT schedule with a 9 AM SLT deadline.
