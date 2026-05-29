@@ -292,3 +292,86 @@ Recent Runs section:
 
 Style note: "In progress" status would show a blue spinning indicator + "Running..." with a [View on GitHub →] link — not shown here but leave visual room for it.
 ```
+
+---
+
+## UX States — loading, error, and success feedback
+
+Mockups show the happy-path end state only. Implement these states at build time.
+
+### Upload Report — PDF upload + Gemini extraction (10–60 seconds)
+
+| Phase | What the user sees |
+|---|---|
+| Idle | Dashed drop zone with upload icon |
+| File selected / uploading | Drop zone replaced by a progress card: file name, spinner, "Uploading…" |
+| Extracting | Same card: "Extracting data from PDF — this may take up to a minute" with a pulsing spinner. Drop zone and Save button hidden. |
+| Success | Extraction results table appears. Save & Confirm button enabled. |
+| Gemini error | Amber error banner: "Extraction failed — Gemini could not read this PDF. Try re-uploading or extract fields manually." Retry button. |
+| Network / storage error | Red banner with error detail. Retry button. |
+
+### Upload Report — Save & Confirm (< 1 second)
+
+| Phase | What the user sees |
+|---|---|
+| Submitting | "Save & Confirm" button shows inline spinner, label changes to "Saving…", button disabled |
+| Success | Navigate to Stock Detail → Reports tab for that stock |
+| Error | Red banner below the button: "Save failed — please try again." Button re-enabled. |
+
+### Scraper Control — Run Full Scrape / Retry (minutes, runs on GitHub Actions)
+
+| Phase | What the user sees |
+|---|---|
+| Triggering | "Run Full Scrape" button shows spinner, disabled for 3 seconds while the webhook fires |
+| Triggered | Status card dot turns blue, label "Running — triggered on GitHub Actions". [View on GitHub →] link. Button disabled. |
+| Completion | Detected on next page load / manual refresh (no real-time push in v1). Status reverts to Idle or Partial. |
+| Trigger error | Red banner: "Could not trigger scraper — check GitHub Actions." |
+
+### General — data loading on page entry
+
+| Screen | Loading state |
+|---|---|
+| Watchlist | Skeleton cards (grey animated placeholder) while fetching |
+| Stock Detail | Skeleton for header price + indicator cards |
+| Scraper Control | Skeleton rows in the Recent Runs table |
+| All | If Supabase returns an error: full-page error state with "Could not load data — refresh to try again" |
+
+---
+
+## Responsive Strategy
+
+Breakpoints used (Tailwind defaults, no custom config needed):
+
+| Prefix | Min-width | Usage |
+|---|---|---|
+| *(none)* | 0px | Mobile-first base styles |
+| `sm:` | 640px | 2-column grids, side-by-side headers, wider selectors |
+| `lg:` | 1024px | Sidebar visible, 3-column grids, full desktop layout |
+
+`md:` (768px) is not used — the jump from mobile to desktop is `lg:`.
+
+### Layout
+
+- **Sidebar** (`w-48 bg-slate-900`): `hidden lg:flex` — hidden on mobile/tablet, shown on desktop.
+- **Bottom nav**: `lg:hidden` fixed bar pinned to viewport bottom with 3 items (Stocks, Upload, Scraper). Active item in `teal-400`, inactive in `slate-500`. Each screen sets its own active item.
+- **Main content** bottom padding: `pb-24 lg:pb-0` on all authenticated screens so the last card scrolls clear of the bottom nav.
+- **Content horizontal padding**: `px-4 sm:px-6` — tighter on mobile, standard on tablet+.
+- **Login**: no sidebar, no bottom nav. Centered card with `max-w-md mx-auto` — responsive by default.
+
+### Grids
+
+| Content | Mobile | sm (640px+) | lg (1024px+) |
+|---|---|---|---|
+| Watchlist stock cards | 1 col | 2 col | 2 col |
+| Technicals indicator cards | 1 col | 2 col | 3 col |
+| Fundamentals metric cards | 1 col | 2 col | 3 col |
+
+### Stock Detail header
+
+Below `sm`: company name, price row, and signal badge stack vertically (`flex-col`).  
+At `sm+`: side-by-side (`sm:flex-row sm:justify-between`), price row wraps with `flex-wrap gap-2`.
+
+### Tab bars and tables
+
+- Tab bars: `overflow-x-auto` — scroll horizontally on narrow screens, no wrapping.
+- Tables (Scraper Control recent runs, Upload Report extraction results): wrapped in `<div class="overflow-x-auto">` with `min-w-[480px]` on the `<table>` so columns don't collapse below readable width.
