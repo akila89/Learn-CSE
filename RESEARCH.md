@@ -35,9 +35,24 @@ Build a personal web application that:
 
 **Frontend framework:** Angular + TypeScript (developer has existing experience)
 
-### Secrets Management
-- **GitHub Actions Secrets:** `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `GEMINI_API_KEY`
-- **Vercel Environment Variables:** `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+### Secrets Inventory
+
+Every secret, where it is stored, and what uses it. On key rotation, update **all** rows for that secret.
+
+| Secret | Store | Used by |
+|---|---|---|
+| `GEMINI_API_KEY` | GitHub Actions Secrets (scraper repo) | Scraper — report extraction + nightly recommendations |
+| `GEMINI_API_KEY` | Supabase Edge Function vault | `extract-report` Edge Function — manual PDF upload |
+| `SUPABASE_SERVICE_KEY` | GitHub Actions Secrets (scraper repo) | Scraper — direct PostgreSQL writes via Npgsql |
+| `SUPABASE_URL` | GitHub Actions Secrets (scraper repo) | Scraper — PostgreSQL connection string |
+| `SUPABASE_URL` | Vercel environment variables | Angular build — Supabase JS client |
+| `SUPABASE_ANON_KEY` | Vercel environment variables | Angular build — Supabase JS client |
+| `GITHUB_PAT` | Supabase Edge Function vault | `trigger-scraper` Edge Function — proxies workflow_dispatch |
+| `SUPABASE_ACCESS_TOKEN` | GitHub Actions Secrets (frontend repo) | Edge Function deployment workflow (ADR 0015) |
+| `SUPABASE_PROJECT_REF` | GitHub Actions Secrets (frontend repo) | Edge Function deployment workflow (ADR 0015) |
+| `SUPABASE_DB_PASSWORD` | Local developer machine only | `supabase db push` for schema migrations (ADR 0017) |
+
+**Note:** `GEMINI_API_KEY` exists in two separate stores. If this key is rotated, it must be updated in both GitHub Actions Secrets and the Supabase Edge Function vault — updating only one will silently break either nightly recommendations or manual PDF extraction.
 
 ---
 
@@ -252,6 +267,7 @@ Sourced from daily price data (API scraping):
 | Risk | Mitigation |
 |---|---|
 | CSE unofficial API changes | Manual trigger fallback; graceful error handling in scraper; UI flags stale data |
+| CSE unofficial API rate limits are undocumented | At ~30 stocks with 4-second inter-call delay, actual rate is ~8 req/min — well below any typical limit. If throttling occurs, the scraper's existing graceful failure handling logs affected stocks as failed and the targeted retry (ADR 0008) recovers them. No architectural change needed. |
 | Gemini API changes or rate limits | PDF extraction is not time-critical; retry logic in scraper |
 | Supabase free tier limits (500MB DB, 1GB storage) | Estimated usage ~6MB for 30 stocks × 5 years; well within limits |
 | GitHub Actions minutes exhausted | 2000 min/month free; nightly scraper ~5 min = 150 min/month used |
