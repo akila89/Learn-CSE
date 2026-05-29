@@ -6,7 +6,7 @@ The prompt contains six sections in this order:
 
 1. **Company Profile** — the structured description extracted from the most recent Annual Report (what the business does, sector, key revenue drivers, USD vs LKR orientation, state ownership if applicable). Sourced from the `companies` table.
 
-2. **Fundamental indicators** — the latest values for all seven indicators (P/E, EPS, ROE, Revenue Growth YoY, Debt/Equity, Dividend Yield, NAV), each labelled with the source Report's period and audit status (Audited / Unaudited). Where a figure has an associated Annotation (either a Report Footnote extracted by Gemini or a User Annotation added during review), the annotation text is included inline immediately after the figure — e.g. `EPS: 4.20 [User note: includes one-off gain from logistics division sale — not recurring]`. Sourced from `company_fundamentals`, `stock_fundamentals`, and `field_annotations`.
+2. **Fundamental indicators** — the latest values for all seven indicators (P/E, EPS, ROE, Revenue Growth YoY, Debt/Equity, Dividend Yield, NAV), each labelled with the source Report's period and audit status (Audited / Unaudited). Sourced from `company_fundamentals` and `stock_fundamentals`. _(v2: where a figure has an associated Annotation, the annotation text will be included inline — e.g. `EPS: 4.20 [User note: includes one-off gain from logistics division sale — not recurring]`. Annotations are deferred to v2.)_
 
 3. **Insights** — the list of structured observations auto-generated during the last Report ingestion (e.g. "operating cash flow is negative despite positive net income"). Sourced from the `insights` column on `companies`. Included verbatim.
 

@@ -11,6 +11,8 @@ These specs are kept as reference. The mockups are the source of truth for visua
 >
 > Layout: a narrow dark sidebar on the left for navigation, plus a full-width top bar above the content area. The top bar contains: app name "CSE Analyser" on the left, and on the right a sun/moon theme toggle icon button followed by the user avatar (initials "A" in a circle) with a dropdown chevron. The theme toggle and user avatar are grouped together on the right of the top bar — this is the single location for the theme toggle across all screens.
 >
+> Sidebar has 2 nav items only: Stocks and Scraper Control. Upload Report has been removed — PDF upload is embedded in the Stock Detail → Reports tab. Mobile bottom nav also has 2 items: Stocks and Scraper Control.
+>
 > Implement full light and dark mode using Tailwind CSS dark: classes.
 >
 > Light theme: sidebar dark navy (#0f172a) with white text, top bar white with a subtle bottom border, content area light grey (#f8fafc), cards white with subtle grey borders, body text #0f172a.
@@ -50,7 +52,7 @@ Top bar (full width, above content area):
 - Right: sun/moon theme toggle icon button, then user avatar circle with initials "A" and a dropdown chevron — grouped together
 
 Sidebar (dark navy, narrow ~200px, below the top bar):
-- Navigation items with icons: Stocks (active, highlighted), Upload Report, Scraper Control
+- Navigation items with icons: Stocks (active, highlighted), Scraper Control
 - No user controls in the sidebar — those live in the top bar
 
 Main content area has two horizontal tabs at the top: "Watchlist" (active) and "Stock Manager".
@@ -123,7 +125,7 @@ Header (below the sidebar, full width):
 - On the right of the header: a large coloured signal badge "ACCUMULATE" with "Confidence: HIGH" below it in small text
 - A horizontal divider
 
-Below the header: four horizontal tabs: Overview (active), Technicals, Fundamentals, Reports
+Below the header: five horizontal tabs: Overview (active), Technicals, Fundamentals, Reports, Recommendations
 
 --- OVERVIEW TAB ---
 
@@ -197,73 +199,60 @@ Stock Note section:
 ## Screen 4d — Stock Detail: Reports tab
 
 ```
-Design the Reports tab of the stock detail screen. Same header and sidebar as before (JKH.N0000, ACCUMULATE, sun/moon theme toggle + user avatar "A" in the top bar (top-right)). Tabs row with Reports active. Apply full light/dark theme support throughout.
+Design the Reports tab of the stock detail screen. Same header and sidebar as before (JKH.N0000, ACCUMULATE, sun/moon theme toggle + user avatar "A" in the top bar (top-right)). Five-tab row: Overview | Technicals | Fundamentals | Reports (active) | Recommendations. Apply full light/dark theme support throughout.
 
-Content split into two sections:
+Single card "Reports" with count badge (4). No upload button in the card header — the scraper detects all reports via the CSE financials endpoint. Upload only appears inline on download_failed rows.
 
-Section 1 — "Reports" heading:
-A list of report rows (white card, subtle border), each row showing:
-- Report type and period: e.g. "Annual Report 2025/26"
-- Audit status badge: "Audited" (green pill) or "Unaudited" (amber pill)
-- A [Review →] link on the right
+All rows start COLLAPSED. Accordion pattern with chevron icon that rotates on expand.
 
-Rows:
-- Annual Report 2025/26    Audited      [Review →]
-- Q3 Report 2025/26        Unaudited    [Review →]
-- Annual Report 2024/25    Audited      [Review →]
+Row 1 — confirmed, annual (collapsed):
+- Chevron-right icon (rotates down on expand), PDF icon, "Annual · FY2025/26" bold, green "Audited" badge
+- Right: muted "Extracted · May 1" timestamp
+- Expanded panel: 2-column table (Field | Value right-aligned): Revenue LKR 48.2B, Net Profit LKR 4.1B, EPS 4.20, ROE 14.2%, Debt/Equity 1.2, NAV 182, DPS 3.50. Below table: "Insights" heading + amber insight row "Operating cash flow is negative despite positive net income".
 
-Section 2 — "Recommendation History" heading:
-A simple table or list:
-- May 29 2026   ACCUMULATE   HIGH     (teal badge)
-- May 28 2026   ACCUMULATE   HIGH     (teal badge)
-- May 27 2026   HOLD         MEDIUM   (amber badge)
-- May 26 2026   HOLD         MEDIUM   (amber badge)
-- May 22 2026   REDUCE       LOW      (orange badge)
+Row 2 — confirmed, quarterly (collapsed):
+- Same accordion pattern. "Q3 FY2025/26", amber "Unaudited" badge, "Extracted · Mar 15"
+- Expanded panel: same table structure with Q3 values. Muted "No insights detected" instead of insight row.
+
+Row 3 — download_failed (NOT expandable — upload action always visible in collapsed row):
+- 4px orange left border. No chevron.
+- Left: orange warning icon, "Q2 FY2025/26" muted text, orange "Download failed" badge
+- Right (in collapsed row): "Choose PDF" button (file input trigger). After selection: filename appears + teal "Upload & Extract" button appears. No expansion needed — full action visible inline.
+
+Row 4 — superseded (collapsed, full row opacity-60 / dimmed):
+- Muted chevron, PDF icon, "Annual · FY2024/25", grey "Superseded" badge, green "Audited" badge
+- Right: muted "Extracted · [date]" timestamp — same pattern as confirmed rows, no "View" link (chevron communicates expandability)
+- Expanded panel: older data table (no insights). Read-only — no actions.
+
+JavaScript: toggleRow(id) toggles hidden panel + rotates chevron. File input handlers show filename and reveal Upload & Extract button for download_failed row.
 ```
 
 ---
 
-## Screen 5 — Upload Report
+## Screen 4e — Stock Detail: Recommendations tab
 
 ```
-Design an upload report screen for a financial analysis app. Same dark sidebar (Upload Report nav item active, sun/moon theme toggle + user avatar "A" in the top bar (top-right)). Apply full light/dark theme support throughout.
+Design the Recommendations tab of the stock detail screen. Same header and sidebar as before (JKH.N0000, ACCUMULATE, sun/moon theme toggle + user avatar "A" in the top bar (top-right)). Five-tab row: Overview | Technicals | Fundamentals | Reports | Recommendations (active). Apply full light/dark theme support throughout.
 
-Page heading: "Upload Report"
+Two sections:
 
-Step 1 — Stock selector:
-- Label "Stock"
-- A dropdown selector showing "JKH.N0000 — John Keells Holdings PLC" with a chevron
+Section 1 — Latest reasoning card (full width, subtle teal left border):
+- Top-right corner: "ACCUMULATE · HIGH · May 29, 2026" in small muted text
+- Quote: "RSI at 34 indicates the stock is oversold. P/E of 12.4 is below its 5-year average of 15.1. Revenue has grown 18% YoY with improving margins."
+- Below: "Risks:" label + "High Debt/Equity of 1.2" in small muted text
 
-Step 2 — PDF upload:
-- A large dashed-border drop zone (full width, ~150px tall, rounded corners, light grey background)
-- Centred content: upload icon, text "Drop PDF here or click to browse"
-- Below the drop zone (after file is selected): filename shown e.g. "annual_report_2026.pdf  ✓ Uploaded" in small text
-
-Step 3 — Extraction results (shown after upload and extraction completes):
-- Section heading "Extraction Results" with a subtitle "Annual Report 2025/26 — ● Extracted"
-- A table with columns: Field | Extracted Value | Annotate
-- Rows:
-  - Revenue       | LKR 48.2B  | [+ Add note] button
-  - Net Profit    | LKR 4.1B   | [+ Add note] button
-  - EPS           | 4.20       | [✎ Note set] button (in teal, indicating a note exists)
-    - Below the EPS row (expanded inline): a small note card "One-off gain from logistics division asset sale — not recurring" with an [Edit] and [Remove] link
-  - ROE           | 14.2%      | [+ Add note]
-  - Debt/Equity   | 1.2        | [+ Add note]
-  - NAV           | 182        | [+ Add note]
-  - DPS           | 3.50       | [+ Add note]
-
-Step 4 — Insights:
-- Section heading "Insights (auto-detected)"
-- One insight row with a warning icon: "Operating cash flow is negative despite positive net income"
-
-Footer actions (right-aligned):
-- [Discard] button (outlined, muted)
-- [Save & Confirm] button (solid, dark navy, primary)
+Section 2 — "Recommendation History" card:
+A list of rows, each showing date (left, muted) + signal badge + confidence (right):
+- May 29, 2026   ACCUMULATE (teal)   HIGH
+- May 28, 2026   ACCUMULATE (teal)   HIGH
+- May 27, 2026   HOLD (amber)        MEDIUM
+- May 26, 2026   HOLD (amber)        MEDIUM
+- May 22, 2026   REDUCE (orange)     LOW
 ```
 
 ---
 
-## Screen 6 — Scraper Control
+## Screen 5 — Scraper Control
 
 ```
 Design a scraper control screen for a financial analysis app. Same dark sidebar (Scraper Control nav item active, sun/moon theme toggle + user avatar "A" in the top bar (top-right)). Apply full light/dark theme support throughout.
@@ -299,24 +288,25 @@ Style note: "In progress" status would show a blue spinning indicator + "Running
 
 Mockups show the happy-path end state only. Implement these states at build time.
 
-### Upload Report — PDF upload + Gemini extraction (10–60 seconds)
+### Stock Detail Reports tab — accordion row states
+
+| ingestion_status | Collapsed row shows | Expandable? |
+|---|---|---|
+| `confirmed` | Chevron · PDF icon · period label · audit badge · "Extracted · [date]" | Yes — extraction table + insights |
+| `stored` (extraction pending) | Chevron · PDF icon · period label · audit badge · amber "Extraction pending" | Yes — table shown if partial; insight row shows "Extraction in progress" |
+| `download_failed` | Warning icon · muted period label · orange "Download failed" badge · "Choose PDF" file input · filename + "Upload & Extract" button after selection | No chevron — action is always visible in collapsed row |
+| superseded (`is_latest = false`) | Dimmed chevron · PDF icon · "Superseded" badge · audit badge · muted "Extracted · [date]" timestamp | Yes — read-only older data table |
+
+### Reports tab — PDF upload (download_failed rows only)
 
 | Phase | What the user sees |
 |---|---|
-| Idle | Dashed drop zone with upload icon |
-| File selected / uploading | Drop zone replaced by a progress card: file name, spinner, "Uploading…" |
-| Extracting | Same card: "Extracting data from PDF — this may take up to a minute" with a pulsing spinner. Drop zone and Save button hidden. |
-| Success | Extraction results table appears. Save & Confirm button enabled. |
-| Gemini error | Amber error banner: "Extraction failed — Gemini could not read this PDF. Try re-uploading or extract fields manually." Retry button. |
-| Network / storage error | Red banner with error detail. Retry button. |
-
-### Upload Report — Save & Confirm (< 1 second)
-
-| Phase | What the user sees |
-|---|---|
-| Submitting | "Save & Confirm" button shows inline spinner, label changes to "Saving…", button disabled |
-| Success | Navigate to Stock Detail → Reports tab for that stock |
-| Error | Red banner below the button: "Save failed — please try again." Button re-enabled. |
+| No file chosen | "Choose PDF" file input button visible in the collapsed download_failed row |
+| File chosen | Filename appears inline. Teal "Upload & Extract" button appears. |
+| Uploading + extracting | Button shows spinner + "Extracting…" label, disabled. Takes 10–60 seconds. |
+| Success | Row transitions: `download_failed` → `confirmed`. Expanded panel shows extraction table + insights. |
+| Gemini error | Amber inline error: "Extraction failed — try re-selecting the file." Retry available. |
+| Network / storage error | Red inline error. Retry available. |
 
 ### Scraper Control — Run Full Scrape / Retry (minutes, runs on GitHub Actions)
 
@@ -353,7 +343,7 @@ Breakpoints used (Tailwind defaults, no custom config needed):
 ### Layout
 
 - **Sidebar** (`w-48 bg-slate-900`): `hidden lg:flex` — hidden on mobile/tablet, shown on desktop.
-- **Bottom nav**: `lg:hidden` fixed bar pinned to viewport bottom with 3 items (Stocks, Upload, Scraper). Active item in `teal-400`, inactive in `slate-500`. Each screen sets its own active item.
+- **Bottom nav**: `lg:hidden` fixed bar pinned to viewport bottom with 2 items (Stocks, Scraper Control). Active item in `teal-400`, inactive in `slate-500`. Each screen sets its own active item. Upload Report removed — PDF upload is embedded in the Reports tab.
 - **Main content** bottom padding: `pb-24 lg:pb-0` on all authenticated screens so the last card scrolls clear of the bottom nav.
 - **Content horizontal padding**: `px-4 sm:px-6` — tighter on mobile, standard on tablet+.
 - **Login**: no sidebar, no bottom nav. Centered card with `max-w-md mx-auto` — responsive by default.
@@ -374,4 +364,4 @@ At `sm+`: side-by-side (`sm:flex-row sm:justify-between`), price row wraps with 
 ### Tab bars and tables
 
 - Tab bars: `overflow-x-auto` — scroll horizontally on narrow screens, no wrapping.
-- Tables (Scraper Control recent runs, Upload Report extraction results): wrapped in `<div class="overflow-x-auto">` with `min-w-[480px]` on the `<table>` so columns don't collapse below readable width.
+- Tables (Scraper Control recent runs): wrapped in `<div class="overflow-x-auto">` with `min-w-[480px]` on the `<table>` so columns don't collapse below readable width.

@@ -4,11 +4,12 @@
 -- ─── Core entities ────────────────────────────────────────────────────────────
 
 CREATE TABLE companies (
-  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name         TEXT NOT NULL UNIQUE,
-  profile      JSONB,  -- Company Profile: sector, business description, revenue characteristics
-  insights     JSONB,  -- Auto-generated Insights from Gemini, refreshed on each report ingestion
-  created_at   TIMESTAMPTZ DEFAULT now()
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name           TEXT NOT NULL UNIQUE,
+  fy_end_month   INTEGER CHECK (fy_end_month BETWEEN 1 AND 12),  -- financial year end month; auto-set from first annual report manualDate; null until first annual ingested
+  profile        JSONB,  -- Company Profile: sector, business description, revenue characteristics
+  insights       JSONB,  -- Auto-generated Insights from Gemini, refreshed on each report ingestion
+  created_at     TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE stocks (
@@ -79,10 +80,15 @@ CREATE TABLE daily_indicators (
 CREATE TABLE reports (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   stock_id         UUID NOT NULL REFERENCES stocks(id),
+  cse_report_id    INTEGER NOT NULL UNIQUE,  -- CSE-assigned report ID from financials endpoint; dedup key
   report_type      TEXT NOT NULL CHECK (report_type IN ('annual', 'quarterly')),
   period           TEXT NOT NULL,   -- e.g. 'FY2024/25', 'Q3 FY2024/25'
   audit_status     TEXT NOT NULL CHECK (audit_status IN ('audited', 'unaudited')),
-  pdf_path         TEXT NOT NULL,   -- Supabase Storage path
+  ingestion_status TEXT NOT NULL DEFAULT 'download_failed' CHECK (ingestion_status IN ('download_failed', 'stored', 'confirmed')),
+                                   -- download_failed: scraper retries each run until PDF fetched or user uploads manually
+                                   -- stored: PDF in Supabase Storage; extraction may or may not have run (check raw_extraction)
+                                   -- confirmed: fundamentals written to company_fundamentals + stock_fundamentals
+  pdf_path         TEXT,           -- Supabase Storage path; null on stub rows (download_failed)
   cse_pdf_url      TEXT,            -- original CSE CDN URL
   raw_extraction   JSONB,           -- Gemini's original output; never modified
   extraction       JSONB,           -- working copy; auto-populated from raw; user-editable; includes field footnotes
@@ -137,19 +143,20 @@ CREATE TABLE stock_fundamentals (
   UNIQUE (stock_id, period)
 );
 
--- ─── Annotations ──────────────────────────────────────────────────────────────
+-- ─── Annotations (v2 — deferred) ─────────────────────────────────────────────
 
--- Report footnotes (Gemini-extracted) live inside reports.extraction JSONB per field.
--- This table stores only user-written notes — user_id is always non-null.
-CREATE TABLE field_annotations (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  report_id   UUID NOT NULL REFERENCES reports(id),
-  field_name  TEXT NOT NULL,        -- e.g. 'eps', 'revenue', 'net_profit'
-  user_id     UUID NOT NULL REFERENCES auth.users(id),
-  user_note   TEXT NOT NULL,
-  created_at  TIMESTAMPTZ DEFAULT now(),
-  UNIQUE (report_id, field_name, user_id)  -- one note per user per field per report; edit in place
-);
+-- Field-level user annotations on extracted report figures are deferred to v2.
+-- v1 Recommendations are generated without inline annotation context.
+--
+-- CREATE TABLE field_annotations (
+--   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--   report_id   UUID NOT NULL REFERENCES reports(id),
+--   field_name  TEXT NOT NULL,
+--   user_id     UUID NOT NULL REFERENCES auth.users(id),
+--   user_note   TEXT NOT NULL,
+--   created_at  TIMESTAMPTZ DEFAULT now(),
+--   UNIQUE (report_id, field_name, user_id)
+-- );
 
 -- ─── Recommendations ──────────────────────────────────────────────────────────
 
@@ -181,7 +188,7 @@ CREATE TABLE cse_all_stocks (
 CREATE TABLE scraper_runs (
   id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   run_at                TIMESTAMPTZ DEFAULT now(),
-  status                TEXT NOT NULL CHECK (status IN ('success', 'partial', 'failed')),
+  status                TEXT NOT NULL CHECK (status IN ('success', 'partial', 'failed', 'holiday')),
   stocks_attempted      INTEGER,
   stocks_succeeded      INTEGER,
   stocks_failed         INTEGER,

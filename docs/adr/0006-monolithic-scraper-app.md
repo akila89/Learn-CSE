@@ -10,11 +10,13 @@ All scraper phases — price fetching, holiday detection, indicator computation,
 4. Detect market holiday (compare latest returned price date vs stored)
 5. If no new price data → skip indicators and recommendations; **still run report detection**
 6. Compute Technical Indicators → `daily_indicators`
-7. Detect and ingest new Reports → fundamentals tables
+7. Detect and ingest new Reports → fundamentals tables (see ADRs 0021, 0022, 0023 for detection key, failure handling, and period labelling)
 8. Generate Recommendations → `recommendations`
 9. Write `scraper_runs` log row
 
-Report detection (step 6) is never skipped — a company can publish a quarterly report on a public holiday. Only indicator computation and recommendation generation are skipped when no new price data is detected.
+Report detection (step 7) is never skipped — a company can publish a quarterly report on a public holiday. Only indicator computation and recommendation generation are skipped when no new price data is detected.
+
+Report detection reads both `infoAnnualData` and `infoQuarterlyData` from the CSE `financials` endpoint. `infoOtherData` (press releases, prospectuses, errata) is ignored.
 
 ## First-time vs incremental
 

@@ -38,15 +38,9 @@ All requests use the anon key + active session. RLS policies enforce access.
 | Get user annotations for a report | `field_annotations` | Filter by `report_id` + current `user_id` |
 | Add / edit user annotation | `field_annotations` | Upsert on `(report_id, field_name, user_id)` |
 | Update stock note | `watchlist_entries` | Patch `stock_note` for current user + stock |
-
-### Upload Report
-
-| Operation | Table(s) | Notes |
-|---|---|---|
-| Upload PDF to storage | Supabase Storage | `reports` bucket |
+| Upload PDF to storage | Supabase Storage | `reports` bucket — triggered from `download_failed` rows in Reports tab |
 | Save report row + extraction | `reports` | Insert with `raw_extraction` + `extraction` populated |
-| Save confirmed fundamentals | `company_fundamentals` + `stock_fundamentals` | After user review |
-| Save report field annotations | `field_annotations` | After user review |
+| Save confirmed fundamentals | `company_fundamentals` + `stock_fundamentals` | After extraction completes |
 | Update extraction (user correction) | `reports` | Patch `extraction` + set `corrected_at` |
 
 ### Stock Manager
@@ -123,5 +117,5 @@ Returns: { cse_security_id: 508, company_name: "John Keells Holdings PLC" }
 | Function | Secrets required | Called from |
 |---|---|---|
 | `trigger-scraper` | `GITHUB_PAT` | Scraper Control |
-| `extract-report` | `GEMINI_API_KEY` | Upload Report |
+| `extract-report` | `GEMINI_API_KEY` | Stock Detail (Reports tab) |
 | `resolve-stock` | — (no secrets; CSE API is public) | Stock Manager |

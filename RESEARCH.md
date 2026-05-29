@@ -118,32 +118,81 @@ Reports are published as PDFs on CSE's CDN:
 https://cdn.cse.lk/cmt/upload_report_file/[ID]_[TIMESTAMP].pdf
 ```
 
-**Discovery (verified):** Call the `financials` endpoint per stock — returns structured list of all report PDF paths:
+**Discovery (verified 2026-05-29):** Call the `financials` endpoint per stock — returns all report types in a single response:
 ```
 POST https://www.cse.lk/api/financials
 Content-Type: application/x-www-form-urlencoded
 Body: symbol=JKH.N0000
 ```
 
-Example response (JKH annual reports going back to 2018):
+**Full response structure (verified against JKH.N0000, COMB.N0000, LOLC.N0000):**
+
+| Top-level key | Contents | Count (JKH) | v1 use |
+|---|---|---|---|
+| `infoAnnualData` | Annual report PDFs, full history | 15 | ✅ Ingest |
+| `infoQuarterlyData` | Quarterly/interim report PDFs, full history | 58 | ✅ Ingest |
+| `infoOtherData` | Press releases, prospectuses, debenture trust deeds, errata | 8 | ⏭ Skip (see below) |
+| `infoWebLink` | Always empty array | 0 | ⏭ Skip |
+| `reqFinancial` | Structured financial summary rows from CSE (159 items, `secId`, `elmId`, `data`) | 159 | ⏭ Skip (see below) |
+| `infoCompanyBannerAd` | Company banner ad image path | — | ⏭ Skip |
+
+**Per-report item fields (all arrays share the same shape):**
 ```json
 {
-  "infoAnnualData": [
-    { "path": "cmt/upload_report_file/508_1779789508055.pdf", "fileText": "Annual Report 2025/26" },
-    { "path": "cmt/upload_report_file/508_1748344127576.pdf", "fileText": "Annual Report 2024/25" }
-  ]
+  "id": 51321,
+  "path": "cmt/upload_report_file/508_1779789508055.pdf",
+  "manualDate": 1779733800000,
+  "uploadedDate": 1779789508055,
+  "fileText": "Annual Report as at 31st March 2026",
+  "path2": null,
+  "authorizedDate": 1779794879336
 }
 ```
 
-**Report ingestion flow:**
-1. Scraper detects new report on the reports page
-2. Downloads PDF → stores in Supabase Storage
-3. Sends PDF text to Gemini 1.5 Flash for structured extraction
-4. Extracted financials presented in review UI
-5. User corrects any errors + adds annotation notes (e.g. *"EPS spike — sold logistics division, one-off event"*)
-6. Confirmed data saved to Supabase PostgreSQL
+| Field | Meaning | Notes |
+|---|---|---|
+| `id` | CSE Report ID — **dedup key** | Stable integer assigned by CSE on upload |
+| `path` | PDF path under `https://cdn.cse.lk/` | Older reports may lack the `cmt/` prefix |
+| `manualDate` | Financial period end date (Unix ms) | Reliable — use this to derive period label |
+| `uploadedDate` | Timestamp PDF was uploaded to CSE | Used to detect re-filings (newer upload = correction) |
+| `fileText` | Human-readable label | **Unreliable** — format varies wildly per company and era |
+| `path2` | Alternate file path, sometimes `.xlsx` | Some quarterly reports have Excel attachments alongside PDF |
+| `authorizedDate` | CSE authorization timestamp | Null for many reports; meaning unclear — not used in v1 |
 
-**Fallback:** If scraper misses a report, UI shows a warning flag on the stock. User can manually upload PDF — same Gemini extraction flow applies.
+**`fileText` inconsistency examples (same field, same endpoint, different companies):**
+- "Annual Report as at 31st March 2026"
+- "ANNUAL REPORT FOR 2024/2025"
+- "Commercial Bank of Ceylon PLC - Annual Report 2024"
+- "Interim Financial Statements for the Quarter ended 31st December 2025"
+- "INTERIM FINANCIAL STATEMENTS AS OF 06/30/2025"
+- "Quarterly Financial Statements as of 31-12- 2011"
+
+→ Never parse `fileText` to derive period — always use `manualDate`.
+
+**`infoOtherData` — what's available (skipped in v1):**
+- Press releases (e.g. "Press Release 31/03/2018")
+- Prospectuses (e.g. "Prospectus - Debenture Issue 2021")
+- Debenture trust deeds
+- Errata to annual reports (e.g. "Errata to the Annual Report 2022/2023")
+
+**Future use:** If a company issues an errata, the corrected numbers should arrive via a re-filing in `infoAnnualData` or `infoQuarterlyData`. The errata PDF itself (in `infoOtherData`) is a narrative correction document — could be fetched and sent to Gemini in v2 to generate an Insight flagging what was corrected.
+
+**`reqFinancial` — what's available (skipped in v1):**
+- 159 rows per company, all with `elmId: "1"` and `data: "Financial Statements Summary"`
+- Appears to be structured financial summary data pre-extracted by CSE from the reports
+- All three test stocks returned exactly 159 rows — likely a fixed schema of financial line items
+
+**Future use:** If CSE's pre-extracted financial data is reliable, `reqFinancial` could supplement or cross-check Gemini extraction in v2, reducing reliance on PDF parsing for standard line items.
+
+**Report ingestion flow (v1):**
+1. Scraper calls `financials` for each Active Stock
+2. Finds `id` values not yet in `reports.cse_report_id` → new reports
+3. For each new report: creates stub row (`ingestion_status = 'download_failed'`), attempts PDF download from CDN
+4. Download success → uploads to Supabase Storage, sends to Gemini, writes fundamentals, sets `ingestion_status = 'confirmed'`
+5. Download failure → stub row remains; scraper retries on subsequent runs
+6. If after several days still failing → UI surfaces "manual upload required"
+
+**Fallback:** User can manually upload a PDF from the Reports tab in Stock Detail (ADR 0012). Manual upload targets the stub row if one exists, or creates a new row. Same Gemini extraction flow applies.
 
 ---
 
@@ -214,7 +263,6 @@ Sourced from daily price data (API scraping):
 | **Login** | Supabase Auth — single user |
 | **Watchlist / Dashboard** | All tracked stocks with quick summary: price, signal badge, key metrics |
 | **Stock Detail** | Full analysis — candlestick chart, technical indicators panel, fundamental metrics cards, recommendation with reasoning, historical report entries with annotations |
-| **Upload Report** | Manual PDF upload → Gemini extraction → review/correct form → annotation field → save |
 | **Scraper Control** | Trigger price or report scrape manually, view last run status and any failure flags |
 | **Stock Manager** | Add/remove stocks from watchlist (symbol search) |
 

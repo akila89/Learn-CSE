@@ -7,7 +7,12 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>body { font-family: 'Inter', sans-serif; }</style>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .tabular { font-variant-numeric: tabular-nums; }
+    .chevron-icon { transition: transform 0.2s ease; }
+    .chevron-icon.rotate-90 { transform: rotate(90deg); }
+  </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950">
 <script>
@@ -16,8 +21,33 @@
     document.getElementById('theme-icon').textContent =
       document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
   }
+
+  function toggleRow(id) {
+    var panel = document.getElementById(id);
+    var chevron = document.getElementById('chevron-' + id);
+    if (panel.classList.contains('hidden')) {
+      panel.classList.remove('hidden');
+      if (chevron) chevron.classList.add('rotate-90');
+    } else {
+      panel.classList.add('hidden');
+      if (chevron) chevron.classList.remove('rotate-90');
+    }
+  }
+
+
+  function handleRow3Upload(input) {
+    var label = document.getElementById('row3-filename');
+    var btn = document.getElementById('row3-upload-btn');
+    if (input.files && input.files[0]) {
+      label.textContent = input.files[0].name;
+      label.classList.remove('hidden');
+      btn.classList.remove('hidden');
+    }
+  }
 </script>
+
 <div class="flex h-screen overflow-hidden">
+  <!-- Sidebar -->
   <aside class="hidden lg:flex w-48 bg-slate-900 border-r border-slate-700 flex-col flex-shrink-0">
     <div class="p-4 flex items-center gap-2.5 border-b border-slate-800">
       <div class="w-7 h-7 bg-teal-500 rounded-md flex items-center justify-center flex-shrink-0">
@@ -30,10 +60,6 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
         Stocks
       </a>
-      <a href="upload-report.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-sm font-medium">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-        Upload Report
-      </a>
       <a href="scraper-control.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-sm font-medium">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         Scraper Control
@@ -42,6 +68,7 @@
   </aside>
 
   <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Topbar -->
     <header class="h-14 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 flex-shrink-0">
       <span class="font-bold text-slate-900 dark:text-white text-sm">CSE Analyser</span>
       <div class="flex items-center gap-3">
@@ -55,6 +82,7 @@
     </header>
 
     <main class="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950 pb-24 lg:pb-0">
+      <!-- Stock header + tab bar -->
       <div class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 pt-5 pb-0">
         <a href="watchlist.html" class="text-xs text-slate-400 hover:text-teal-600 mb-3 inline-flex items-center gap-1">← Watchlist</a>
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-2">
@@ -62,8 +90,8 @@
             <h1 class="text-xl font-bold text-slate-900 dark:text-white">John Keells Holdings PLC</h1>
             <div class="flex flex-wrap items-center gap-2 mt-1">
               <span class="font-mono text-sm text-slate-500 dark:text-slate-400">JKH.N0000</span>
-              <span class="text-xl font-bold text-slate-900 dark:text-white">LKR 245.75</span>
-              <span class="text-sm text-green-600 dark:text-green-400 font-medium">+1.20 (+1.2%)</span>
+              <span class="text-xl font-bold text-slate-900 dark:text-white tabular">LKR 245.75</span>
+              <span class="text-sm text-green-600 dark:text-green-400 font-medium tabular">+1.20 (+1.2%)</span>
             </div>
           </div>
           <div class="sm:text-right flex-shrink-0">
@@ -71,101 +99,256 @@
             <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Confidence: HIGH</div>
           </div>
         </div>
+        <!-- Tab bar — 5 tabs -->
         <div class="flex gap-6 overflow-x-auto">
-          <a href="stock-detail-overview.html" class="py-3 text-sm font-medium text-slate-500 dark:text-slate-400 border-b-2 border-transparent">Overview</a>
-          <a href="stock-detail-technicals.html" class="py-3 text-sm font-medium text-slate-500 dark:text-slate-400 border-b-2 border-transparent">Technicals</a>
-          <a href="stock-detail-fundamentals.html" class="py-3 text-sm font-medium text-slate-500 dark:text-slate-400 border-b-2 border-transparent">Fundamentals</a>
-          <a href="stock-detail-reports.html" class="py-3 text-sm font-semibold text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400">Reports</a>
+          <a href="stock-detail-overview.html" class="py-3 text-sm font-medium text-slate-500 dark:text-slate-400 border-b-2 border-transparent whitespace-nowrap">Overview</a>
+          <a href="stock-detail-technicals.html" class="py-3 text-sm font-medium text-slate-500 dark:text-slate-400 border-b-2 border-transparent whitespace-nowrap">Technicals</a>
+          <a href="stock-detail-fundamentals.html" class="py-3 text-sm font-medium text-slate-500 dark:text-slate-400 border-b-2 border-transparent whitespace-nowrap">Fundamentals</a>
+          <a href="stock-detail-reports.html" class="py-3 text-sm font-semibold text-teal-600 dark:text-teal-400 border-b-2 border-teal-600 dark:border-teal-400 whitespace-nowrap">Reports</a>
+          <a href="stock-detail-recommendations.html" class="py-3 text-sm font-medium text-slate-500 dark:text-slate-400 border-b-2 border-transparent whitespace-nowrap">Recommendations</a>
         </div>
       </div>
 
-      <div class="px-4 sm:px-6 py-6 space-y-6">
-        <!-- Reports list -->
+      <!-- Main content -->
+      <div class="px-4 sm:px-6 py-6">
+        <!-- Reports card -->
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-          <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+
+          <!-- Card header -->
+          <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-2">
             <h2 class="font-semibold text-slate-900 dark:text-white">Reports</h2>
+            <span class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold px-2 py-0.5 rounded-full">4</span>
           </div>
-          <div class="divide-y divide-slate-100 dark:divide-slate-700">
-            <div class="flex items-center justify-between px-5 py-4">
-              <div class="flex items-center gap-3">
-                <span class="text-sm font-medium text-slate-900 dark:text-white">Annual Report 2025/26</span>
-                <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold px-2 py-0.5 rounded-full">Audited</span>
-              </div>
-              <a href="upload-report.html" class="text-sm text-teal-600 dark:text-teal-400 font-medium hover:underline">Review →</a>
-            </div>
-            <div class="flex items-center justify-between px-5 py-4">
-              <div class="flex items-center gap-3">
-                <span class="text-sm font-medium text-slate-900 dark:text-white">Q3 Report 2025/26</span>
-                <span class="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-semibold px-2 py-0.5 rounded-full">Unaudited</span>
-              </div>
-              <a href="upload-report.html" class="text-sm text-teal-600 dark:text-teal-400 font-medium hover:underline">Review →</a>
-            </div>
-            <div class="flex items-center justify-between px-5 py-4">
-              <div class="flex items-center gap-3">
-                <span class="text-sm font-medium text-slate-900 dark:text-white">Annual Report 2024/25</span>
-                <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold px-2 py-0.5 rounded-full">Audited</span>
-              </div>
-              <a href="upload-report.html" class="text-sm text-teal-600 dark:text-teal-400 font-medium hover:underline">Review →</a>
-            </div>
-          </div>
-        </div>
 
-        <!-- Recommendation history -->
-        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-          <div class="px-5 py-4 border-b border-slate-200 dark:border-slate-700">
-            <h2 class="font-semibold text-slate-900 dark:text-white">Recommendation History</h2>
-          </div>
-          <div class="divide-y divide-slate-100 dark:divide-slate-700">
-            <div class="flex items-center justify-between px-5 py-3.5">
-              <span class="text-sm text-slate-500 dark:text-slate-400">May 29, 2026</span>
-              <div class="flex items-center gap-2">
-                <span class="bg-teal-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">ACCUMULATE</span>
-                <span class="text-xs text-slate-500 dark:text-slate-400">HIGH</span>
+          <!-- Accordion rows -->
+          <div class="divide-y divide-slate-100 dark:divide-slate-700/60">
+
+            <!-- ── Row 1: confirmed · annual · FY2025/26 ── -->
+            <div>
+              <!-- Collapsed header (clickable) -->
+              <button
+                onclick="toggleRow('row1-panel')"
+                class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors"
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <!-- Chevron -->
+                  <svg id="chevron-row1-panel" class="chevron-icon w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                  <!-- PDF icon -->
+                  <svg class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                  <span class="text-sm font-semibold text-slate-900 dark:text-white">Annual · FY2025/26</span>
+                  <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">Audited</span>
+                </div>
+                <span class="text-xs text-slate-400 dark:text-slate-500 tabular whitespace-nowrap ml-4 flex-shrink-0">Extracted · May 1</span>
+              </button>
+              <!-- Expanded panel -->
+              <div id="row1-panel" class="hidden bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700/60 px-5 py-4 space-y-4">
+                <!-- Extraction table -->
+                <table class="w-full text-sm tabular">
+                  <thead>
+                    <tr class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      <th class="text-left pb-2 font-semibold">Field</th>
+                      <th class="text-right pb-2 font-semibold">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">Revenue</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">LKR 48.2B</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">Net Profit</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">LKR 4.1B</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">EPS</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">4.20</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">ROE</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">14.2%</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">Debt / Equity</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">1.2</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">NAV</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">182</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">DPS</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">3.50</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <!-- Insights -->
+                <div>
+                  <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2">Insights</p>
+                  <div class="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40 rounded-lg px-3 py-2.5">
+                    <svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                    <p class="text-xs text-amber-800 dark:text-amber-300">Operating cash flow is negative despite positive net income</p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="flex items-center justify-between px-5 py-3.5">
-              <span class="text-sm text-slate-500 dark:text-slate-400">May 28, 2026</span>
-              <div class="flex items-center gap-2">
-                <span class="bg-teal-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">ACCUMULATE</span>
-                <span class="text-xs text-slate-500 dark:text-slate-400">HIGH</span>
+
+            <!-- ── Row 2: confirmed · quarterly · Q3 FY2025/26 ── -->
+            <div>
+              <button
+                onclick="toggleRow('row2-panel')"
+                class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors"
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <svg id="chevron-row2-panel" class="chevron-icon w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                  <svg class="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                  <span class="text-sm font-semibold text-slate-900 dark:text-white">Q3 FY2025/26</span>
+                  <span class="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">Unaudited</span>
+                </div>
+                <span class="text-xs text-slate-400 dark:text-slate-500 tabular whitespace-nowrap ml-4 flex-shrink-0">Extracted · Mar 15</span>
+              </button>
+              <div id="row2-panel" class="hidden bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700/60 px-5 py-4 space-y-4">
+                <table class="w-full text-sm tabular">
+                  <thead>
+                    <tr class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      <th class="text-left pb-2 font-semibold">Field</th>
+                      <th class="text-right pb-2 font-semibold">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">Revenue</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">LKR 11.4B</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">Net Profit</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">LKR 890M</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">EPS</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">1.05</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">ROE</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">13.8%</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">Debt / Equity</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">1.3</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">NAV</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">180</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">DPS</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">0</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="text-xs text-slate-400 dark:text-slate-500 italic">No insights detected</p>
               </div>
             </div>
-            <div class="flex items-center justify-between px-5 py-3.5">
-              <span class="text-sm text-slate-500 dark:text-slate-400">May 27, 2026</span>
-              <div class="flex items-center gap-2">
-                <span class="bg-amber-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">HOLD</span>
-                <span class="text-xs text-slate-500 dark:text-slate-400">MEDIUM</span>
+
+            <!-- ── Row 3: download_failed · Q2 FY2025/26 ── -->
+            <div class="border-l-4 border-orange-300 dark:border-orange-400">
+              <div class="flex items-center justify-between px-5 py-4 flex-wrap gap-3">
+                <!-- Left -->
+                <div class="flex items-center gap-3 min-w-0">
+                  <svg class="w-4 h-4 text-orange-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                  <span class="text-sm font-medium text-slate-400 dark:text-slate-500">Q2 FY2025/26</span>
+                  <span class="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">Download failed</span>
+                </div>
+                <!-- Right: inline file picker + upload action -->
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span id="row3-filename" class="hidden text-xs text-slate-500 dark:text-slate-400 tabular truncate max-w-[140px]"></span>
+                  <label class="cursor-pointer">
+                    <input type="file" accept=".pdf" class="hidden" onchange="handleRow3Upload(this)">
+                    <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 rounded-md px-2.5 py-1.5 hover:bg-orange-50 dark:hover:bg-orange-900/20 cursor-pointer select-none whitespace-nowrap">
+                      📄 Choose PDF
+                    </span>
+                  </label>
+                  <button id="row3-upload-btn" class="hidden text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 px-3 py-1.5 rounded-md whitespace-nowrap transition-colors">
+                    Upload &amp; Extract
+                  </button>
+                </div>
               </div>
             </div>
-            <div class="flex items-center justify-between px-5 py-3.5">
-              <span class="text-sm text-slate-500 dark:text-slate-400">May 26, 2026</span>
-              <div class="flex items-center gap-2">
-                <span class="bg-amber-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">HOLD</span>
-                <span class="text-xs text-slate-500 dark:text-slate-400">MEDIUM</span>
+
+            <!-- ── Row 4: superseded · annual · FY2024/25 ── -->
+            <div class="opacity-60">
+              <button
+                onclick="toggleRow('row4-panel')"
+                class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors"
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <svg id="chevron-row4-panel" class="chevron-icon w-4 h-4 text-slate-300 dark:text-slate-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                  </svg>
+                  <svg class="w-4 h-4 text-slate-300 dark:text-slate-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                  <span class="text-sm font-medium text-slate-400 dark:text-slate-500">Annual · FY2024/25</span>
+                  <span class="bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">Superseded</span>
+                  <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">Audited</span>
+                </div>
+                <span class="text-xs text-slate-400 dark:text-slate-500 tabular whitespace-nowrap ml-4 flex-shrink-0">Extracted · Jun 10</span>
+              </button>
+              <div id="row4-panel" class="hidden bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-700/60 px-5 py-4">
+                <table class="w-full text-sm tabular">
+                  <thead>
+                    <tr class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                      <th class="text-left pb-2 font-semibold">Field</th>
+                      <th class="text-right pb-2 font-semibold">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">Revenue</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">LKR 42.1B</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">Net Profit</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">LKR 3.6B</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">EPS</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">3.85</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">ROE</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">13.1%</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">Debt / Equity</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">1.4</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">NAV</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">175</td>
+                    </tr>
+                    <tr>
+                      <td class="py-2 text-slate-600 dark:text-slate-400">DPS</td>
+                      <td class="py-2 text-right font-medium text-slate-900 dark:text-white">3.00</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
-            <div class="flex items-center justify-between px-5 py-3.5">
-              <span class="text-sm text-slate-500 dark:text-slate-400">May 22, 2026</span>
-              <div class="flex items-center gap-2">
-                <span class="bg-orange-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full">REDUCE</span>
-                <span class="text-xs text-slate-500 dark:text-slate-400">LOW</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+
+          </div><!-- /accordion rows -->
+        </div><!-- /reports card -->
+      </div><!-- /main content -->
     </main>
   </div>
 </div>
-<!-- Mobile bottom nav -->
+
+<!-- Mobile bottom nav — 2 items -->
 <nav class="lg:hidden fixed bottom-0 inset-x-0 bg-slate-900 border-t border-slate-700 flex z-50">
   <a href="watchlist.html" class="flex-1 flex flex-col items-center py-3 gap-0.5 text-teal-400">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
     <span class="text-xs font-medium">Stocks</span>
-  </a>
-  <a href="upload-report.html" class="flex-1 flex flex-col items-center py-3 gap-0.5 text-slate-500">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-    <span class="text-xs font-medium">Upload</span>
   </a>
   <a href="scraper-control.html" class="flex-1 flex flex-col items-center py-3 gap-0.5 text-slate-500">
     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>

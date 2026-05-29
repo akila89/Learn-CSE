@@ -27,8 +27,12 @@ The single, user-managed set of Stocks to track. A Stock on the Watchlist is eit
 _Avoid_: Portfolio, holdings, favourites
 
 **Report**:
-A PDF document published by a Company to CSE — either an Annual Report (audited, full-year) or a Quarterly Report (unaudited, 3-month period). Every Report contains current-period figures, prior same-period figures, and % change for each line item. Gemini extracts all three values per line item from a single Report — no cross-report stitching is needed. Reports are ingested per Stock (the CSE API is symbol-scoped), but extracted figures are split: company-level figures (Revenue, Profit, ROE, Debt/Equity, Net Assets) are stored on the Company keyed by period; Stock-level figures (EPS, DPS) are stored on the Stock. Conflicting company-level figures across share classes for the same period are flagged for user review rather than silently resolved.
+A PDF document published by a Company to CSE — either an Annual Report (audited, full-year) or a Quarterly Report (unaudited, 3-month period). Every Report contains current-period figures, prior same-period figures, and % change for each line item. Gemini extracts all three values per line item from a single Report — no cross-report stitching is needed. Reports are ingested per Stock (the CSE API is symbol-scoped), but extracted figures are split: company-level figures (Revenue, Profit, ROE, Debt/Equity, Net Assets) are stored on the Company keyed by period; Stock-level figures (EPS, DPS) are stored on the Stock. Conflicting company-level figures across share classes for the same period are flagged for user review rather than silently resolved. Each Report is uniquely identified by its CSE Report ID (from the `financials` endpoint) — the scraper uses this as the dedup key. A Report's period is expressed as a canonical label derived from its period-end date and the Company's Financial Year End Month: Annual Reports use `FY2024/25` (March FY end) or `FY2025` (December FY end); Quarterly Reports use `Q1 FY2024/25` or `Q3 2025`. A company may re-file a corrected Report for the same period — the old Report is marked superseded (`is_latest = false`) and the new one ingested fresh. A Report's ingestion progresses through statuses: `download_failed` (PDF not yet fetched — scraper retries each run), `stored` (PDF in Supabase Storage, extraction pending or failed), `confirmed` (fundamentals written to DB).
 _Avoid_: Financial statement, filing, disclosure
+
+**Financial Year End Month**:
+The calendar month in which a Company closes its financial year. Most CSE-listed companies use March (month 3); banks and some others use December (month 12). Determines how quarterly period labels are computed from a Report's period-end date (e.g., December 31 is Q3 for a March-FY company but Q4 for a December-FY company). Auto-derived from the `manualDate` of the first Annual Report ingested for that Company — not entered manually.
+_Avoid_: Fiscal year, reporting period, year-end
 
 **RLS Policy**:
 A Supabase Row Level Security rule applied to every table. All tables require an authenticated session — `SELECT/INSERT/UPDATE` permitted only where `auth.uid()` matches the single app user. The anon key is public (compiled into the Angular bundle); RLS ensures it cannot read data without a valid login session.
@@ -47,7 +51,7 @@ A structured description of a Company extracted by Gemini from its most recent A
 _Avoid_: About, description, company info
 
 **Recommendation**:
-An AI-generated buy/sell signal for a Stock, produced nightly after the price scrape. Contains a signal (BUY / ACCUMULATE / HOLD / REDUCE / SELL), confidence level, plain-English reasoning, and flagged risks. One Recommendation per Stock (not per user) — generated from a single Gemini prompt containing all extracted financial figures, computed Technical Indicators, Company Profile, Insights, and a combined summary of all users' Annotations for that Stock. No mid-generation data fetching — all inputs are read from the DB at prompt-build time. Full history retained; not overwritten nightly.
+An AI-generated buy/sell signal for a Stock, produced nightly after the price scrape. Contains a signal (BUY / ACCUMULATE / HOLD / REDUCE / SELL), confidence level, plain-English reasoning, and flagged risks. One Recommendation per Stock (not per user) — generated from a single Gemini prompt containing all extracted financial figures, computed Technical Indicators, Company Profile, and Insights. No mid-generation data fetching — all inputs are read from the DB at prompt-build time. Full history retained; not overwritten nightly. (v2: Annotation context will be added to the prompt.)
 _Avoid_: Signal, alert, suggestion, prediction
 
 **Technical Indicator**:
@@ -62,8 +66,8 @@ _Avoid_: Fundamental, financial metric, KPI
 The fixed JSON structure Gemini must return when processing a Report PDF. Contains named fields for all known financial line items (revenue, net_profit, eps, roe, debt_equity, nav, dps, etc.) — `null` if a field is absent from the PDF — plus an `additional_items` array of key-value pairs for notable items outside the fixed schema. The `additional_items` array is the primary source of auto-generated Insights. Both raw Gemini output and user-confirmed output are stored — raw for prompt improvement auditing, confirmed as the source of truth for indicators and recommendations.
 _Avoid_: Output format, response schema, parsed data
 
-**Annotation**:
-A field-level note attached to a specific extracted figure within a specific Report. Has two sources: a Report Footnote (extracted by Gemini from asterisks, footnotes, or annexes in the PDF — the company's own qualification of a figure) and a User Annotation (added manually during the review step). Both are stored per field per Report. When building the Recommendation prompt, all Annotations for a Stock across all users are combined and sent inline with their associated figure.
+**Annotation** _(v2 — not in initial build)_:
+A field-level note attached to a specific extracted figure within a specific Report. Has two sources: a Report Footnote (extracted by Gemini from asterisks, footnotes, or annexes in the PDF — the company's own qualification of a figure) and a User Annotation (added manually during the review step). Both are stored per field per Report. When building the Recommendation prompt, all Annotations for a Stock across all users are combined and sent inline with their associated figure. v1 Recommendations are generated without annotation context.
 _Avoid_: Comment, note, flag
 
 **Scraper Run**:
@@ -92,11 +96,11 @@ _Avoid_: Sync, refresh, historical load
 >
 > **Dev:** What if Gemini flags something unusual in the report?
 >
-> **Domain expert:** Gemini populates `additional_items` with anything outside the fixed schema — say, "operating cash flow turned negative despite positive net income." That becomes an Insight on the Company. The user reviews the raw extraction in the UI, corrects any wrong figures, and can add a User Annotation to a specific field — like "EPS includes one-off gain, not recurring." The confirmed output is saved alongside the raw.
+> **Domain expert:** Gemini populates `additional_items` with anything outside the fixed schema — say, "operating cash flow turned negative despite positive net income." That becomes an Insight on the Company. The user can review the raw extraction in the UI and correct any wrong figures. The confirmed output is saved alongside the raw.
 >
-> **Dev:** Does that annotation affect the Recommendation tonight?
+> **Dev:** Does the Recommendation tonight use the corrected figures?
 >
-> **Domain expert:** Yes. The nightly Scraper Run builds the Gemini prompt for COMB.N0000 using the confirmed figures, the Insight, and the Annotation inline against the EPS field. The Recommendation it generates will explicitly account for the one-off. It's stored as a new Recommendation row — the previous one is not overwritten.
+> **Domain expert:** Yes. The nightly Scraper Run builds the Gemini prompt for COMB.N0000 using the confirmed figures and the Insight. The Recommendation it generates is stored as a new row — the previous one is not overwritten. (In v2, field-level Annotations will also be injected inline into the prompt.)
 >
 > **Dev:** What if COMB.N0000 was Inactive on the Watchlist last month — do we have a gap in price data?
 >
