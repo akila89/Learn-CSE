@@ -1,7 +1,7 @@
 // Verifies what the CSE financials endpoint returns for annual AND quarterly reports.
 // Logs the full raw response and all top-level keys.
 //
-// Run: node research-scripts/cse-financials-verify.js
+// Run: node research/scripts/cse-financials-verify.js
 
 const { chromium } = require('playwright');
 

@@ -1,0 +1,35 @@
+# ─── Angular / TypeScript (frontend/) ────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/.env.local
+
+# ─── .NET Console App (scraper/) ─────────────────────────────────────────────
+scraper/bin/
+scraper/obj/
+scraper/*.user
+scraper/local.env
+*.suo
+*.sln.docstates
+
+# ─── Supabase CLI ─────────────────────────────────────────────────────────────
+.supabase/
+
+# ─── Secrets (never commit) ───────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ─── Claude / Ralph Loop (local execution state) ─────────────────────────────
+.claude/ralph-loop.local.md
+prompts/temp/
+
+# ─── Editor / OS ──────────────────────────────────────────────────────────────
+.vs/
+.vscode/
+.idea/
+*.swp
+*.DS_Store
+Thumbs.db
