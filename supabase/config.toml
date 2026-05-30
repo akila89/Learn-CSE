@@ -1,6 +1,6 @@
 # Supabase project configuration
-# Run `supabase link --project-ref <your-project-ref>` once to set the project reference,
-# then apply the schema with `supabase db push`.
+# Setup: supabase link --project-ref <your-project-ref>
+# Deploy schema: SUPABASE_DB_PASSWORD=<password> supabase db push
 
 [api]
 enabled = true

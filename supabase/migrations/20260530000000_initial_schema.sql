@@ -1,7 +1,7 @@
 -- CSE Stock Analyser — v1 initial schema
 -- Apply with: supabase db push
 --
--- field_annotations intentionally absent — deferred to v2 (scope decision in v1_scope memory)
+-- field_annotations intentionally absent — deferred to v2 (see Annotation in CONTEXT.md)
 
 -- ============================================================
 -- 1. companies
