@@ -65,7 +65,7 @@ Apply to all authenticated screens (not login/landing):
 
 ## Phase 7 — Documentation
 
-Create a versioned spec file (e.g. `docs/ui-prompts-v1.md`) containing:
+Create a versioned spec file (e.g. `docs/mockups/ui-prompts-v1.md`) containing:
 
 - **Global style notes**: font, number formatting, status badge colors, layout description
 - **Screen specs**: one prompt block per screen describing layout and content (useful for generative UI tools or future re-generation)

@@ -27,7 +27,7 @@ Use the canonical terms from `CONTEXT.md` exactly. Violations in names, comments
 - Standalone components only — no `NgModules`.
 - Use Angular Signals for all reactive state in feature services (ADR-0010). No NgRx.
 - Feature services (e.g. `WatchlistService`, `StockService`) own signals and call Supabase directly; components inject services and bind to signals in templates.
-- File naming: `kebab-case.component.ts`, `kebab-case.service.ts`, `kebab-case.pipe.ts`.
+- File naming: `kebab-case.ts` for components (Angular 20 suffix-less convention); `kebab-case.service.ts` for services, `kebab-case.guard.ts` for guards, `kebab-case.pipe.ts` for pipes.
 - Class naming: `PascalCase`. Signal variable names: `camelCase`.
 - Use `computed()` for derived state; avoid duplicating derived values as separate signals.
 - Prefer named exports. No barrel `index.ts` files unless the directory has 3+ public exports.
@@ -92,7 +92,7 @@ Never reorder phases or skip step 7 — reports can be published on public holid
 
 ### Schema rules
 - Every table has an RLS policy — no exceptions (CONTEXT.md: RLS Policy).
-- `SELECT/INSERT/UPDATE` requires `auth.uid()` to match the single app user.
+- All policies use `FOR ALL TO authenticated USING (true) WITH CHECK (true)` — any authenticated session has full access. This is deliberate: the app has a single owner; possession of valid Supabase credentials is the access boundary, not per-row uid scoping.
 - Technical Indicators are stored denormalised: one row per Stock per day, flat columns per indicator. New indicators = `ALTER TABLE ADD COLUMN` (ADR-0004). No EAV tables for indicators.
 - Company-level figures (Revenue, ROE, Debt/Equity) stored on `companies`; Stock-level figures (EPS, DPS) stored on the Stock. Conflicts across share classes for the same period are flagged, not silently resolved (ADR-0005).
 - Soft-delete for Watchlist entries — set `is_active = false`, never `DELETE` (ADR-0002).
@@ -102,10 +102,41 @@ Never reorder phases or skip step 7 — reports can be published on public holid
 
 ## Testing
 
-- Scraper phases are unit-tested in isolation — inject a mock DB context.
-- Use real SQL against a local Supabase instance for integration tests on DB write paths. Do not mock the database for integration tests.
-- Angular services: test signal state transitions, not implementation details.
-- Test names must state the expected outcome, not the mechanism: `returns_stale_when_price_older_than_last_run`, not `test_staleness_check`.
+**Tests are mandatory — never commit new code without them.**
+
+### Angular (Vitest)
+
+- Every new `@Injectable` service gets a spec: public methods, signal state, and error paths.
+- Every route guard gets a spec: the allow branch and every redirect branch.
+- Every new component gets a spec: renders correctly, user interactions, error states.
+- Spec file lives next to the source file: `auth.service.spec.ts` beside `auth.service.ts`.
+- Test signal state transitions, not implementation details.
+- Run before every commit — **all three must pass**:
+  ```
+  cd frontend
+  npm run lint          # ESLint — must exit with 0 errors
+  npm run format:check  # Prettier — must report no issues
+  npm run test -- --watch=false  # Vitest — must exit with 0 failures
+  ```
+
+### Angular E2E (Playwright)
+
+- E2E tests live in `frontend/e2e/`.
+- Cover auth redirect flows, form interactions, and error states that require a real browser.
+- Run with `npm run e2e` (requires `ng serve` running or uses the built-in `webServer` config).
+- Authenticated tests require `E2E_EMAIL` and `E2E_PASSWORD` env vars — never hardcode credentials.
+- E2E tests are not run in the pre-commit hook — run them manually before merging a PR.
+
+### .NET scraper (xUnit)
+
+- Phases are unit-tested in isolation — inject a mock DB context.
+- Every public method on a service or phase class gets at least one happy-path and one error-path test.
+- Use real SQL against a local Supabase instance for integration tests on DB write paths — do not mock the database for integration tests.
+- Run `dotnet test` before every commit — **must exit with 0 failures**.
+
+### General
+
+- Test names state the expected outcome, not the mechanism: `returns_stale_when_price_older_than_last_run`, not `test_staleness_check`.
 
 ---
 

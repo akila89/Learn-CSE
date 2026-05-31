@@ -3,6 +3,13 @@ frontend/node_modules/
 frontend/dist/
 frontend/.angular/
 frontend/.env.local
+frontend/src/environments/environment.prod.ts
+frontend/src/environments/environment.development.ts
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/playwright/.cache/
+frontend/playwright/.auth/
 
 # ─── .NET Console App (scraper/) ─────────────────────────────────────────────
 scraper/bin/
@@ -14,6 +21,8 @@ scraper/local.env
 
 # ─── Supabase CLI ─────────────────────────────────────────────────────────────
 .supabase/
+supabase/.branches/
+supabase/.temp/
 
 # ─── Secrets (never commit) ───────────────────────────────────────────────────
 .env
@@ -24,7 +33,7 @@ scraper/local.env
 
 # ─── Claude / Ralph Loop (local execution state) ─────────────────────────────
 .claude/ralph-loop.local.md
-prompts/temp/
+docs/prompts/temp/
 
 # ─── Editor / OS ──────────────────────────────────────────────────────────────
 .vs/
