@@ -1,0 +1,64 @@
+<div class="login-page">
+  <div class="login-card">
+    <!-- Logo -->
+    <div class="logo-row">
+      <div class="logo-icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"
+          />
+        </svg>
+      </div>
+      <div>
+        <div class="logo-name">CSE Analyser</div>
+        <div class="logo-sub">Colombo Stock Exchange</div>
+      </div>
+    </div>
+
+    <h1 class="heading">Welcome back</h1>
+    <p class="subheading">Sign in to your personal analysis tool</p>
+
+    <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="form" novalidate>
+      <div class="field">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          placeholder="you@example.com"
+          [(ngModel)]="email"
+          name="email"
+          required
+          autocomplete="email"
+        />
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="password-wrap">
+          <input
+            id="password"
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="password"
+            name="password"
+            required
+            autocomplete="current-password"
+          />
+          <button type="button" class="show-btn" (click)="showPassword = !showPassword">
+            {{ showPassword ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+      </div>
+
+      @if (error()) {
+        <div class="error-msg" role="alert">{{ error() }}</div>
+      }
+
+      <button type="submit" class="submit-btn" [disabled]="loading()">
+        {{ loading() ? 'Signing in…' : 'Sign In' }}
+      </button>
+    </form>
+  </div>
+</div>

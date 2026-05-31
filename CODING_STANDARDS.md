@@ -102,10 +102,41 @@ Never reorder phases or skip step 7 — reports can be published on public holid
 
 ## Testing
 
-- Scraper phases are unit-tested in isolation — inject a mock DB context.
-- Use real SQL against a local Supabase instance for integration tests on DB write paths. Do not mock the database for integration tests.
-- Angular services: test signal state transitions, not implementation details.
-- Test names must state the expected outcome, not the mechanism: `returns_stale_when_price_older_than_last_run`, not `test_staleness_check`.
+**Tests are mandatory — never commit new code without them.**
+
+### Angular (Vitest)
+
+- Every new `@Injectable` service gets a spec: public methods, signal state, and error paths.
+- Every route guard gets a spec: the allow branch and every redirect branch.
+- Every new component gets a spec: renders correctly, user interactions, error states.
+- Spec file lives next to the source file: `auth.service.spec.ts` beside `auth.service.ts`.
+- Test signal state transitions, not implementation details.
+- Run before every commit — **all three must pass**:
+  ```
+  cd frontend
+  npm run lint          # ESLint — must exit with 0 errors
+  npm run format:check  # Prettier — must report no issues
+  npm run test -- --watch=false  # Vitest — must exit with 0 failures
+  ```
+
+### Angular E2E (Playwright)
+
+- E2E tests live in `frontend/e2e/`.
+- Cover auth redirect flows, form interactions, and error states that require a real browser.
+- Run with `npm run e2e` (requires `ng serve` running or uses the built-in `webServer` config).
+- Authenticated tests require `E2E_EMAIL` and `E2E_PASSWORD` env vars — never hardcode credentials.
+- E2E tests are not run in the pre-commit hook — run them manually before merging a PR.
+
+### .NET scraper (xUnit)
+
+- Phases are unit-tested in isolation — inject a mock DB context.
+- Every public method on a service or phase class gets at least one happy-path and one error-path test.
+- Use real SQL against a local Supabase instance for integration tests on DB write paths — do not mock the database for integration tests.
+- Run `dotnet test` before every commit — **must exit with 0 failures**.
+
+### General
+
+- Test names state the expected outcome, not the mechanism: `returns_stale_when_price_older_than_last_run`, not `test_staleness_check`.
 
 ---
 

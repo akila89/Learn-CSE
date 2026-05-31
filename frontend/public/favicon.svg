@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Teal rounded square background -->
+  <rect width="32" height="32" rx="7" fill="#14b8a6"/>
+  <!-- Stock chart icon (scaled from 24px viewBox to ~18px centered in 32px) -->
+  <g transform="translate(7, 7) scale(0.75)" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+  </g>
+</svg>
