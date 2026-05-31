@@ -16,6 +16,9 @@ scraper/**/bin/
 scraper/**/obj/
 scraper/**/*.user
 scraper/local.env
+# Scraper local config — fill in connection strings, never commit
+scraper/CseAnalyser.Scraper/appsettings.Development.json
+scraper/CseAnalyser.Scraper.Tests/appsettings.Test.json
 *.suo
 *.sln.docstates
 
