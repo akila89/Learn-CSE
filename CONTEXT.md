@@ -35,7 +35,7 @@ The calendar month in which a Company closes its financial year. Most CSE-listed
 _Avoid_: Fiscal year, reporting period, year-end
 
 **RLS Policy**:
-A Supabase Row Level Security rule applied to every table. All tables require an authenticated session — `SELECT/INSERT/UPDATE` permitted only where `auth.uid()` matches the single app user. The anon key is public (compiled into the Angular bundle); RLS ensures it cannot read data without a valid login session.
+A Supabase Row Level Security rule applied to every table. All tables require an authenticated session — `SELECT/INSERT/UPDATE` are permitted for any authenticated user (`USING (true)`). This is intentional: the app is a single-user personal tool with no `user_id` columns to scope against; the policy blocks the anon key (which is compiled into the Angular bundle) while relying on `enable_signup = false` at deployment to prevent additional accounts from being created.
 _Avoid_: Permission, access control, auth rule
 
 **Stock Note**:
