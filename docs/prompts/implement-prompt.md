@@ -39,7 +39,9 @@ Pick the highest-priority open issue that is not blocked by another open issue.
      - `npm run lint` (ESLint — 0 errors)
      - `npm run format:check` (Prettier — no issues; run `npm run format:write` to auto-fix)
      - `npm run test -- --watch=false` (Vitest — 0 failures)
-   - .NET: `dotnet test` — must exit with 0 failures.
+   - .NET: run both in `scraper/` — all must pass:
+     - `dotnet format --verify-no-changes` (formatting + style + unused usings — run `dotnet format` to auto-fix)
+     - `dotnet test` (xUnit — 0 failures)
 5. **Commit** — make a single git commit. The message MUST:
    - Start with `RALPH:` prefix
    - Include the task completed and any PRD reference

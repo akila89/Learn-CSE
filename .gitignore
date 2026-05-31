@@ -12,9 +12,9 @@ frontend/playwright/.cache/
 frontend/playwright/.auth/
 
 # ─── .NET Console App (scraper/) ─────────────────────────────────────────────
-scraper/bin/
-scraper/obj/
-scraper/*.user
+scraper/**/bin/
+scraper/**/obj/
+scraper/**/*.user
 scraper/local.env
 *.suo
 *.sln.docstates

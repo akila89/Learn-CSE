@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="CseAnalyser.Scraper.Tests/CseAnalyser.Scraper.Tests.csproj" />
+  <Project Path="CseAnalyser.Scraper/CseAnalyser.Scraper.csproj" />
+</Solution>
