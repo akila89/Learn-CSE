@@ -44,8 +44,20 @@ Use the canonical terms from `CONTEXT.md` exactly. Violations in names, comments
 ## Scraper (.NET / C#)
 
 ### Style
-- `PascalCase` for types and methods; `camelCase` for local variables and parameters.
-- `SCREAMING_SNAKE_CASE` for constants.
+- `PascalCase` for types, methods, properties, and constants.
+- `camelCase` for local variables and parameters.
+- `_camelCase` for private fields.
+- `PascalCase` for `private static readonly` fields (treated as constants).
+- Member order within a type:
+  1. Constants (public → internal → protected → private, alphabetical within each)
+  2. Static fields (public → internal → protected → private)
+  3. Instance fields (public → internal → protected → private)
+  4. Constructors (fewest parameters first)
+  5. Public methods (alphabetical)
+  6. Internal methods (alphabetical)
+  7. Protected methods (alphabetical)
+  8. Private methods (alphabetical)
+- Always use explicit types — never `var`.
 - Async all the way — no `.Result` or `.Wait()` blocking calls.
 - Use records for immutable data transfer objects (e.g. extracted indicator rows).
 - Phases are separate classes with a single public `RunAsync(context)` method — independently unit-testable.
@@ -141,6 +153,19 @@ Never reorder phases or skip step 7 — reports can be published on public holid
 ---
 
 ## General
+
+### Blank lines
+
+- No blank lines inside parameter lists or argument lists.
+- No consecutive blank lines anywhere in the code — one blank line maximum between members or blocks.
+
+### Comments
+
+- Default to no comments. Only add one when the **why is non-obvious**: a hidden constraint, a subtle invariant, a workaround for a specific bug, or behaviour that would surprise a reader.
+- Do not explain what the code does — well-named identifiers already do that.
+- If removing the comment wouldn't confuse a future reader, don't write it.
+
+### Other
 
 - No secrets in source. Connection strings, API keys, and tokens go in GitHub Actions Secrets or `.env` files (git-ignored).
 - `prompts/temp/` is git-ignored — use it for throwaway prompt files.
