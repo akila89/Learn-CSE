@@ -32,39 +32,29 @@ test.describe('Auth — unauthenticated', () => {
   });
 });
 
+async function signIn(page: import('@playwright/test').Page) {
+  await page.goto('/login');
+  await page.getByLabel('Email').fill(EMAIL);
+  await page.getByLabel('Password').fill(PASSWORD);
+  await page.getByRole('button', { name: 'Sign In' }).click();
+  await expect(page).toHaveURL('/dashboard');
+}
+
 test.describe('Auth — authenticated', () => {
   test.skip(!EMAIL || !PASSWORD, 'E2E_EMAIL and E2E_PASSWORD not set');
 
   test('valid credentials navigate to /dashboard', async ({ page }) => {
-    await page.goto('/login');
-    await page.getByLabel('Email').fill(EMAIL);
-    await page.getByLabel('Password').fill(PASSWORD);
-    await page.getByRole('button', { name: 'Sign In' }).click();
-    await expect(page).toHaveURL('/dashboard');
+    await signIn(page);
   });
 
   test('visiting /login when authenticated redirects to /dashboard', async ({ page }) => {
-    // Sign in first
-    await page.goto('/login');
-    await page.getByLabel('Email').fill(EMAIL);
-    await page.getByLabel('Password').fill(PASSWORD);
-    await page.getByRole('button', { name: 'Sign In' }).click();
-    await expect(page).toHaveURL('/dashboard');
-
-    // Now navigate back to /login — should redirect away
+    await signIn(page);
     await page.goto('/login');
     await expect(page).toHaveURL('/dashboard');
   });
 
   test('sign out redirects to /login', async ({ page }) => {
-    // Sign in first
-    await page.goto('/login');
-    await page.getByLabel('Email').fill(EMAIL);
-    await page.getByLabel('Password').fill(PASSWORD);
-    await page.getByRole('button', { name: 'Sign In' }).click();
-    await expect(page).toHaveURL('/dashboard');
-
-    // Sign out via button
+    await signIn(page);
     await page.getByRole('button', { name: 'Sign out' }).click();
     await expect(page).toHaveURL('/login');
   });

@@ -15,9 +15,10 @@ export class AuthService {
   readonly ready: Promise<void>;
 
   constructor() {
-    this.ready = this.supabase.auth.getSession().then(({ data }) => {
-      this.session.set(data.session);
-    });
+    this.ready = this.supabase.auth
+      .getSession()
+      .then(({ data }) => this.session.set(data.session))
+      .catch(() => this.session.set(null));
 
     this.supabase.auth.onAuthStateChange((_event, session) => {
       this.session.set(session);
