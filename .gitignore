@@ -33,7 +33,7 @@ supabase/.temp/
 
 # ─── Claude / Ralph Loop (local execution state) ─────────────────────────────
 .claude/ralph-loop.local.md
-prompts/temp/
+docs/prompts/temp/
 
 # ─── Editor / OS ──────────────────────────────────────────────────────────────
 .vs/

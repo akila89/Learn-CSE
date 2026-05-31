@@ -1,59 +1,78 @@
 # Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.13.
+Angular 21 app for the CSE Stock Analyser.
 
-## Development server
+## Prerequisites
 
-To start a local development server, run:
+- Node.js 20+
+- A running local Supabase instance (`npx supabase start` from the project root)
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Setup
 
 ```bash
-ng generate component component-name
+npm install
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Create `src/environments/environment.development.ts` with your local Supabase credentials (printed by `supabase start`):
+
+```ts
+export const environment = {
+  production: false,
+  supabaseUrl: 'http://127.0.0.1:54321',
+  supabaseAnonKey: '<anon key from supabase start output>',
+};
+```
+
+This file is gitignored — never commit real keys.
+
+## Run locally
 
 ```bash
-ng generate --help
+npm run start
 ```
 
-## Building
+Open `http://localhost:4200`. The app reloads on file changes.
 
-To build the project run:
+## Unit tests
+
+```bash
+npm test
+```
+
+## E2E tests (Playwright)
+
+Copy `.env.example` to `.env` and replace the placeholder values with a real test user's credentials:
+
+```bash
+cp .env.example .env
+```
+
+```
+E2E_EMAIL=test-user@example.com
+E2E_PASSWORD=your-test-password
+```
+
+Then run:
+
+```bash
+npm run e2e
+```
+
+Use `npm run e2e:ui` to open the Playwright UI. The dev server starts automatically if not already running.
+
+## Build
 
 ```bash
 ng build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Artifacts are written to `dist/`.
 
-## Running unit tests
+## Deployment (Vercel)
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+Set these environment variables in the Vercel project settings:
 
-```bash
-ng test
-```
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+`scripts/set-env.js` generates `environment.prod.ts` from these at build time.
