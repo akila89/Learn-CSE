@@ -179,6 +179,17 @@ public class CseApiClientTests
         Assert.Equal("Bad request detail", result.Error!.Message);
     }
 
+    [Fact]
+    public async Task empty_200_body_returns_typed_error_not_exception()
+    {
+        (CseApiClient client, CapturingHandler _) = Build(HttpStatusCode.OK, "null");
+
+        CseApiResult<IReadOnlyList<SecurityCodeDto>> result = await client.GetAllSecurityCodesAsync();
+
+        Assert.False(result.IsSuccess);
+        Assert.NotNull(result.Error);
+    }
+
     private static (CseApiClient client, CapturingHandler handler) Build(
         HttpStatusCode status,
         string responseBody)

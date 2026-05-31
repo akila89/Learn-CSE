@@ -8,11 +8,6 @@ public class CseApiClient(HttpClient httpClient)
 {
     private const string BaseUrl = "https://www.cse.lk/api/";
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-    };
-
     public async Task<CseApiResult<IReadOnlyList<SecurityCodeDto>>> GetAllSecurityCodesAsync(
         CancellationToken ct = default)
     {
@@ -80,8 +75,13 @@ public class CseApiClient(HttpClient httpClient)
         }
 
         string json = await response.Content.ReadAsStringAsync();
-        T? result = JsonSerializer.Deserialize<T>(json, JsonOptions);
-        return CseApiResult<T>.Success(result!);
+        T? result = JsonSerializer.Deserialize<T>(json);
+        if (result is null)
+        {
+            return CseApiResult<T>.Failure(new CseApiError((int)response.StatusCode, "Response body was empty or could not be deserialized."));
+        }
+
+        return CseApiResult<T>.Success(result);
     }
 }
 
