@@ -1,32 +1,51 @@
 using CseAnalyser.Scraper.CseApi;
 using CseAnalyser.Scraper.CseApi.Dto;
 using CseAnalyser.Scraper.Scraper.Models;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace CseAnalyser.Scraper.Scraper.Phases;
 
-public sealed class HolidayDetectionPhase(CseApiClient apiClient, NpgsqlDataSource db)
+public sealed class HolidayDetectionPhase(CseApiClient apiClient, NpgsqlDataSource db, ILogger logger)
 {
     public async Task RunAsync(ScraperRunContext context, CancellationToken ct = default)
     {
         if (context.ActiveStocks.Count == 0)
+        {
+            logger.LogInformation("HolidayDetection — no active stocks, skipping");
             return;
+        }
 
         StockRow probe = context.ActiveStocks[0];
         if (probe.CseChartId is null)
+        {
+            logger.LogInformation("HolidayDetection — probe stock has no chart ID, skipping");
             return;
+        }
 
         CseApiResult<IReadOnlyList<OhlcvDataPointDto>> result =
             await apiClient.GetChartDataAsync(probe.CseChartId.Value, ct: ct);
 
         if (!result.IsSuccess || result.Value!.Count == 0)
+        {
+            logger.LogWarning("HolidayDetection — API call failed or returned no data, assuming market open");
             return;
+        }
 
         DateOnly latestApiDate = TimestampToDate(result.Value.Max(p => p.TimestampMs));
         DateOnly? storedDate = await GetLatestStoredDateAsync(probe.Id, ct);
 
         if (storedDate.HasValue && latestApiDate <= storedDate.Value)
+        {
             context.IsHoliday = true;
+            logger.LogInformation(
+                "HolidayDetection — {Symbol} API:{ApiDate} stored:{StoredDate} → holiday",
+                probe.Symbol, latestApiDate, storedDate.Value);
+        }
+        else
+        {
+            logger.LogInformation("HolidayDetection — market open, continuing");
+        }
     }
 
     private async Task<DateOnly?> GetLatestStoredDateAsync(Guid stockId, CancellationToken ct)

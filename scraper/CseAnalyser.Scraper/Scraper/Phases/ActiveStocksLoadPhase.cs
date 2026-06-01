@@ -1,9 +1,10 @@
 using CseAnalyser.Scraper.Scraper.Models;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace CseAnalyser.Scraper.Scraper.Phases;
 
-public sealed class ActiveStocksLoadPhase(NpgsqlDataSource db)
+public sealed class ActiveStocksLoadPhase(NpgsqlDataSource db, ILogger logger)
 {
     public async Task RunAsync(ScraperRunContext context, CancellationToken ct = default)
     {
@@ -32,5 +33,6 @@ public sealed class ActiveStocksLoadPhase(NpgsqlDataSource db)
         }
 
         context.ActiveStocks = stocks;
+        logger.LogInformation("ActiveStocksLoad — {Count} stocks loaded", stocks.Count);
     }
 }

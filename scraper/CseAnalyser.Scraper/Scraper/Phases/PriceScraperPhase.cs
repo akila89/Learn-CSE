@@ -1,16 +1,20 @@
 using CseAnalyser.Scraper.CseApi;
 using CseAnalyser.Scraper.CseApi.Dto;
 using CseAnalyser.Scraper.Scraper.Models;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace CseAnalyser.Scraper.Scraper.Phases;
 
-public sealed class PriceScraperPhase(CseApiClient apiClient, NpgsqlDataSource db)
+public sealed class PriceScraperPhase(CseApiClient apiClient, NpgsqlDataSource db, ILogger logger)
 {
     public async Task RunAsync(ScraperRunContext context, CancellationToken ct = default)
     {
         if (context.IsHoliday)
             return;
+
+        int total = context.ActiveStocks.Count(s => s.CseChartId is not null);
+        logger.LogInformation("PriceScraper starting — {Total} stocks", total);
 
         foreach (StockRow stock in context.ActiveStocks)
         {
@@ -28,19 +32,27 @@ public sealed class PriceScraperPhase(CseApiClient apiClient, NpgsqlDataSource d
             {
                 context.StocksFailed++;
                 context.ErrorDetails.Add($"{stock.Symbol}: {result.Error!.Message}");
+                logger.LogError("PriceScraper {Symbol} — {Error}", stock.Symbol, result.Error!.Message);
                 continue;
             }
 
             try
             {
+                int count = result.Value!.Count;
                 await UpsertPricesAsync(stock.Id, result.Value!, ct);
+                logger.LogDebug("PriceScraper {Symbol} ok ({Count} prices upserted)", stock.Symbol, count);
             }
             catch (Exception ex)
             {
                 context.StocksFailed++;
                 context.ErrorDetails.Add($"{stock.Symbol}: {ex.Message}");
+                logger.LogError(ex, "PriceScraper {Symbol} — {Error}", stock.Symbol, ex.Message);
             }
         }
+
+        int succeeded = context.StocksAttempted - context.StocksFailed;
+        logger.LogInformation("PriceScraper done — {Succeeded}/{Attempted} succeeded",
+            succeeded, context.StocksAttempted);
     }
 
     private async Task UpsertPricesAsync(

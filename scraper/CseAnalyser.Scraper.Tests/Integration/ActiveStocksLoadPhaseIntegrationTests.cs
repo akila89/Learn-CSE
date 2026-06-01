@@ -1,5 +1,6 @@
 using CseAnalyser.Scraper.Scraper;
 using CseAnalyser.Scraper.Scraper.Phases;
+using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 
 namespace CseAnalyser.Scraper.Tests.Integration;
@@ -13,7 +14,7 @@ public sealed class ActiveStocksLoadPhaseIntegrationTests : IAsyncDisposable
 
     public ActiveStocksLoadPhaseIntegrationTests()
     {
-        _phase = new ActiveStocksLoadPhase(_db);
+        _phase = new ActiveStocksLoadPhase(_db, NullLogger.Instance);
     }
 
     [Fact]

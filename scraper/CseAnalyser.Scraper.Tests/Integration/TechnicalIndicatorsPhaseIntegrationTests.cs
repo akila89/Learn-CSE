@@ -1,6 +1,7 @@
 using CseAnalyser.Scraper.Scraper;
 using CseAnalyser.Scraper.Scraper.Models;
 using CseAnalyser.Scraper.Scraper.Phases;
+using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 
 namespace CseAnalyser.Scraper.Tests.Integration;
@@ -14,7 +15,7 @@ public sealed class TechnicalIndicatorsPhaseIntegrationTests : IAsyncDisposable
 
     public TechnicalIndicatorsPhaseIntegrationTests()
     {
-        _phase = new TechnicalIndicatorsPhase(_db);
+        _phase = new TechnicalIndicatorsPhase(_db, NullLogger.Instance);
     }
 
     [Fact]

@@ -1,8 +1,9 @@
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace CseAnalyser.Scraper.Scraper.Phases;
 
-public sealed class ScraperRunLoggerPhase(NpgsqlDataSource db)
+public sealed class ScraperRunLoggerPhase(NpgsqlDataSource db, ILogger logger)
 {
     public async Task<Guid> StartAsync(CancellationToken ct = default)
     {
@@ -14,6 +15,7 @@ public sealed class ScraperRunLoggerPhase(NpgsqlDataSource db)
             RETURNING id
             """;
         Guid runId = (Guid)(await cmd.ExecuteScalarAsync(ct))!;
+        logger.LogInformation("Run {RunId} started", runId.ToString("N")[..8]);
         return runId;
     }
 
@@ -39,5 +41,12 @@ public sealed class ScraperRunLoggerPhase(NpgsqlDataSource db)
         cmd.Parameters.AddWithValue("errorDetail", errorDetail);
         cmd.Parameters.AddWithValue("runId", context.RunId);
         await cmd.ExecuteNonQueryAsync(ct);
+
+        logger.LogInformation(
+            "Run {RunId} completed — status: {Status}, attempted: {Attempted}, failed: {Failed}",
+            context.RunId.ToString("N")[..8],
+            context.FinalStatus,
+            context.StocksAttempted,
+            context.StocksFailed);
     }
 }

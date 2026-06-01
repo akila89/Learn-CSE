@@ -1,26 +1,34 @@
 using CseAnalyser.Scraper.Scraper.Models;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace CseAnalyser.Scraper.Scraper.Phases;
 
-public sealed class TechnicalIndicatorsPhase(NpgsqlDataSource db)
+public sealed class TechnicalIndicatorsPhase(NpgsqlDataSource db, ILogger logger)
 {
     public async Task RunAsync(ScraperRunContext context, CancellationToken ct = default)
     {
         if (context.IsHoliday)
             return;
 
+        logger.LogInformation("TechnicalIndicators starting — {Count} stocks", context.ActiveStocks.Count);
+
+        int processed = 0;
         foreach (StockRow stock in context.ActiveStocks)
         {
             try
             {
                 await ComputeAndUpsertAsync(stock, ct);
+                processed++;
             }
             catch (Exception ex)
             {
                 context.ErrorDetails.Add($"{stock.Symbol} indicators: {ex.Message}");
             }
         }
+
+        logger.LogInformation("TechnicalIndicators done — {Processed}/{Total} processed",
+            processed, context.ActiveStocks.Count);
     }
 
     private async Task ComputeAndUpsertAsync(StockRow stock, CancellationToken ct)

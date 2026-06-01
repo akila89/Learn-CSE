@@ -1,5 +1,6 @@
 using CseAnalyser.Scraper.Scraper;
 using CseAnalyser.Scraper.Scraper.Phases;
+using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 
 namespace CseAnalyser.Scraper.Tests.Integration;
@@ -13,7 +14,7 @@ public sealed class ScraperRunLoggerPhaseIntegrationTests : IAsyncDisposable
 
     public ScraperRunLoggerPhaseIntegrationTests()
     {
-        _phase = new ScraperRunLoggerPhase(_db);
+        _phase = new ScraperRunLoggerPhase(_db, NullLogger.Instance);
     }
 
     [Fact]
