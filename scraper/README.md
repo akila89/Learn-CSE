@@ -2,6 +2,22 @@
 
 .NET 10 console app that runs the nightly price pipeline against the CSE API and writes results to PostgreSQL via Npgsql.
 
+## Git hooks
+
+A pre-commit hook enforces formatting on both the scraper (dotnet format) and the frontend (prettier + eslint). Run this once after cloning:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Each check only runs when files in its area are staged, so a scraper-only commit won't trigger the frontend check and vice versa.
+
+If a scraper commit is rejected, fix formatting and retry:
+
+```bash
+cd scraper && dotnet format
+```
+
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)

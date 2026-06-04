@@ -34,8 +34,7 @@ supabase/.temp/
 *.pem
 *.key
 
-# ─── Claude / Ralph Loop (local execution state) ─────────────────────────────
-.claude/ralph-loop.local.md
+# ─── Local execution state ─────────────────────────────
 docs/prompts/temp/
 
 # ─── Editor / OS ──────────────────────────────────────────────────────────────
