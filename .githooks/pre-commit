@@ -1,0 +1,21 @@
+#!/bin/sh
+
+if git diff --cached --name-only | grep -q "^scraper/.*\.cs$"; then
+  echo "Running dotnet format check..."
+  cd scraper && dotnet format --verify-no-changes
+  if [ $? -ne 0 ]; then
+    echo "dotnet format failed. Run 'dotnet format' in scraper/ to fix."
+    exit 1
+  fi
+  cd ..
+fi
+
+if git diff --cached --name-only | grep -q "^frontend/src/"; then
+  echo "Running frontend lint-staged..."
+  cd frontend && npx lint-staged
+  if [ $? -ne 0 ]; then
+    echo "lint-staged failed. Fix the errors above and try again."
+    exit 1
+  fi
+  cd ..
+fi

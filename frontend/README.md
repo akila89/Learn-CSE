@@ -7,6 +7,14 @@ Angular 21 app for the CSE Stock Analyser.
 - Node.js 20+
 - A running local Supabase instance (`npx supabase start` from the project root)
 
+## Git hooks
+
+A pre-commit hook runs prettier and eslint on staged frontend files. Run this once after cloning:
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Setup
 
 ```bash
